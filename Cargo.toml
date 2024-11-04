@@ -1,48 +1,32 @@
-[package]
-name = "babylon-hackathon"
-version = "0.1.0"
-authors = ["laurens <32776056+0xLaurenzo@users.noreply.github.com>"]
-edition = "2021"
+[workspace]
+resolver = "2"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+members = ["contracts/*", "packages/*", "proto-build"]
 
-[lib]
-crate-type = ["cdylib", "rlib"]
+[workspace.dependencies]
+cosmwasm-std = "1.5.4"
+mars-owner = "2.0.0"
+cosmwasm-schema = "1.5.4"
+cw-storage-plus = "1.2.0"
+cw2 = "1.1.2"
+thiserror = { version = "1.0.56" }
 
-[profile.release]
-opt-level = 3
-debug = false
-rpath = false
-lto = true
-debug-assertions = false
-codegen-units = 1
-panic = 'abort'
-incremental = false
-overflow-checks = true
+# protobuf code generation
+prost = {version = "0.12.3", default-features = false, features = ["std"]}
+prost-types = {version = "0.12.3", default-features = false}
+prost-build = { version = "0.12.3" }
+tonic = { version = "0.10" }
+tonic-build = { version = "0.10" }
+regex = { version = "1" }
+walkdir = { version = "2" }
+cosmos-sdk-proto = {version = "0.21.1", default-features = false}
+itertools = "0.10.3"
+proc-macro2 = "1.0.52"
+quote = "1.0.26"
+syn = "1.0.98"
+prettyplease = "0.1.16"
+heck = "0.4.0"
+log = "0.4.17"
 
-[features]
-# use library feature to disable all instantiate/execute/query exports
-library = []
-
-[package.metadata.scripts]
-optimize = """docker run --rm -v "$(pwd)":/code \
-  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
-  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/optimizer:0.15.0
-"""
-
-[dependencies]
-cosmwasm-schema = "2.1.0"
-cosmwasm-std = { version = "2.1.0", features = [
-  "cosmwasm_1_4",
-  # Enable this if you only deploy to chains that have CosmWasm 2.0 or higher
-  # "cosmwasm_2_0",
-] }
-cw-storage-plus = "2.0.0"
-cw2 = "2.0.0"
-schemars = "0.8.16"
-serde = { version = "1.0.197", default-features = false, features = ["derive"] }
-thiserror = { version = "1.0.58" }
-
-[dev-dependencies]
-cw-multi-test = "2.0.0"
+quasar-std = { path = "packages/quasar-std" }
+quasar-std-derive = { path = "packages/quasar-std-derive" }
