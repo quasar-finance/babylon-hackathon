@@ -10,4 +10,7 @@ pub enum VaultError {
     #[error("{0}")]
     Owner(#[from] OwnerError),
 
+    #[error("Destination with id {id} already exists")]
+    DestinationAlreadyExists { id: String },
+
 }

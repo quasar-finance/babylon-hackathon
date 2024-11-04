@@ -1,6 +1,6 @@
 use crate::error::{VaultError};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::OWNER;
+use crate::state::{Destination, DESTINATIONS, OWNER};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -9,6 +9,7 @@ use cosmwasm_std::{
     SupplyResponse, Uint128,
 };
 use cw2::set_contract_version;
+use interfaces::{Allocation, GetAllocationResponse, GetAllocationsResponse};
 use quasar_std::quasarlabs::quasarnode::tokenfactory::v1beta1::{
     MsgBurn, MsgCreateDenom, MsgCreateDenomResponse, MsgMint,
 };
@@ -50,17 +51,64 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> GaugeResult {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> GaugeResult {
     match msg {
-        interfaces::ExecuteMsg::AddDestination { destination_id } => todo!(),
+        interfaces::ExecuteMsg::AddDestination { destination_id } => execute_add_destination(deps, info, destination_id),
         interfaces::ExecuteMsg::Custom(_) => unimplemented!(),
     }
 }
 
+fn execute_add_destination(deps: DepsMut, info: MessageInfo, destination_id: String) -> GaugeResult {
+    // Only owner can add destinations
+    OWNER.assert_owner(deps.storage, &info.sender)?;
+    
+    // Check if destination already exists
+    if DESTINATIONS.has(deps.storage, destination_id.clone()) {
+        return Err(VaultError::DestinationAlreadyExists { id: destination_id });
+    }
+
+    // Create new destination with minimal info
+    let destination = Destination {
+        id: destination_id.clone(),
+        vault_contract: "".to_string(),
+        ibc_channel: None,
+    };
+
+    // Save destination
+    DESTINATIONS.save(deps.storage, destination_id, &destination)?;
+
+    Ok(Response::new().add_attribute("action", "add_destination"))
+}
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> GaugeResult<Binary> {
     match msg {
-        interfaces::QueryMsg::GetAllocations { } => todo!(),
-        interfaces::QueryMsg::GetAllocation { denom } => todo!(),
+        interfaces::QueryMsg::GetAllocations {} => query_allocations(deps),
+        interfaces::QueryMsg::GetAllocation { denom } => query_allocation(deps, denom),
         interfaces::QueryMsg::Custom(_) => unimplemented!(),
     }
+}
+
+fn query_allocations(deps: Deps) -> GaugeResult<Binary> {
+    let allocations: Vec<Allocation> = DESTINATIONS
+        .range(deps.storage, None, None, Order::Ascending)
+        .map(|item| {
+            let (id, _) = item?;
+            Ok(Allocation {
+                destination_id: id,
+                amount: Decimal::zero(), // Mock implementation returns 0 allocations
+            })
+        })
+        .collect::<StdResult<Vec<_>>>()?;
+
+    let response = GetAllocationsResponse { allocations };
+    Ok(to_json_binary(&response)?)
+}
+
+fn query_allocation(deps: Deps, denom: String) -> GaugeResult<Binary> {
+    // Mock implementation just returns 0 allocation for any denom
+    let allocation = Allocation {
+        destination_id: denom,
+        amount: Decimal::zero(),
+    };
+    let response = GetAllocationResponse { allocation };
+    Ok(to_json_binary(&response)?)
 }

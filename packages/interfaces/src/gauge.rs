@@ -20,12 +20,12 @@ pub enum QueryMsg<T = Empty> {
 
 #[cw_serde]
 pub struct GetAllocationsResponse {
-    allocations: Vec<Allocation>,
+    pub allocations: Vec<Allocation>,
 }
 
 #[cw_serde]
 pub struct GetAllocationResponse {
-    allocation: Allocation,
+    pub allocation: Allocation,
 }
 
 #[cw_serde]
