@@ -1,0 +1,90 @@
+#!/bin/bash
+
+set -e
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+DIFF_FILTER=ACMR
+
+CHANGES=$(git diff --name-only origin/main --cached --diff-filter=$DIFF_FILTER)
+
+
+if [ -z "$CHANGES" ]
+then
+  echo "No changes"
+  exit 1
+fi
+
+update_schemas() {
+  local workspace=$1
+  local contract=$2
+  if [[ $CHANGES == *${workspace}/contracts/${contract}/* ]]
+  then
+    echo "Changes in ${contract} contract"
+    cd ${REPO_ROOT}/smart-contracts/${workspace}/contracts/${contract}
+
+    # generate schemas
+    cargo schema
+    NEW_CHANGES=$(git diff --name-only origin/main --diff-filter=$DIFF_FILTER)
+    if [[ $NEW_CHANGES == *${workspace}/contracts/${contract}/schema* ]]
+    then
+      git add schema
+    else
+      echo "No schema changes for ${contract}."
+    fi
+  fi
+}
+
+fix_formatting() {
+  local target=$1
+  if [[ $CHANGES == *${target}* ]]
+  then
+    echo "Changes in ${target}"
+    cd ${REPO_ROOT}/smart-contracts/${target}
+    # fix formatting
+    echo "format"
+    cargo fmt --all
+    cd ${REPO_ROOT}
+    NEW_CHANGES=$(git diff --name-only origin/main --cached --diff-filter=$DIFF_FILTER)
+    git add $NEW_CHANGES
+  fi
+}
+
+check_lint() {
+  local target=$1
+  if [[ $CHANGES == *${target}* ]]
+  then
+    echo "Changes in ${target}"
+    cd ${REPO_ROOT}/smart-contracts/${target}
+    cargo clippy --all-targets -- -D warnings -Aclippy::doc_lazy_continuation
+    cd -
+  fi
+}
+
+update_schemas osmosis lst-dex-adapter-osmosis
+update_schemas osmosis lst-adapter-osmosis
+update_schemas osmosis dex-router-osmosis
+update_schemas osmosis token-burner
+update_schemas osmosis cl-vault
+update_schemas osmosis merkle-incentives
+update_schemas osmosis range-middleware
+update_schemas quasar babylon-vault
+fix_formatting osmosis/contracts/lst-dex-adapter-osmosis
+fix_formatting osmosis/contracts/lst-adapter-osmosis
+fix_formatting osmosis/contracts/dex-router-osmosis
+fix_formatting osmosis/contracts/token-burner
+fix_formatting osmosis/contracts/cl-vault
+fix_formatting osmosis/contracts/merkle-incentives
+fix_formatting osmosis/contracts/range-middleware
+fix_formatting osmosis/packages/quasar-types
+fix_formatting quasar/proto-build
+fix_formatting quasar/contracts/babylon-vault
+check_lint osmosis/contracts/lst-dex-adapter-osmosis
+check_lint osmosis/contracts/lst-adapter-osmosis
+check_lint osmosis/contracts/dex-router-osmosis
+check_lint osmosis/contracts/token-burner
+check_lint osmosis/contracts/cl-vault
+check_lint osmosis/contracts/merkle-incentives
+check_lint osmosis/contracts/range-middleware
+check_lint osmosis/packages/quasar-types
+check_lint quasar/proto-build
+check_lint quasar/contracts/babylon-vault
