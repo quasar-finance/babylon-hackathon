@@ -1,6 +1,6 @@
 use crate::error::{assert_deposit_funds, assert_withdraw_funds, VaultError};
 use crate::msg::{ExecuteMsg, InstantiateMsg, LstInfo, OracleQueryMsg, QueryMsg};
-use crate::state::{LSTS, OWNER, VAULT_DENOM};
+use crate::state::{LSTS, OWNER, VAULT_DENOM, ORACLE};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -33,6 +33,7 @@ pub fn instantiate(
         deps.api,
         mars_owner::OwnerInit::SetInitialOwner { owner: msg.owner },
     )?;
+    ORACLE.save(deps.storage, &deps.api.addr_validate(&msg.oracle)?)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let msg = MsgCreateDenom {
         sender: env.contract.address.to_string(),
@@ -60,6 +61,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> V
         ExecuteMsg::UpdateOwner(update) => Ok(OWNER.update(deps, info, update)?),
         ExecuteMsg::RegisterLst { denom, interface } => register_lst(deps, info, denom, interface),
         ExecuteMsg::UnregisterLst { denom } => unregister_lst(deps, info, denom),
+        ExecuteMsg::SetOracle { oracle } => set_oracle(deps, info, oracle),
         ExecuteMsg::Deposit {} => deposit(deps, env, info),
         ExecuteMsg::Withdraw {} => withdraw(deps, env, info),
         _ => Ok(Response::default()),
@@ -83,6 +85,12 @@ fn unregister_lst(deps: DepsMut, info: MessageInfo, denom: String) -> VaultResul
     }
 }
 
+fn set_oracle(deps: DepsMut, info: MessageInfo, oracle: String) -> VaultResult {
+    OWNER.assert_owner(deps.storage, &info.sender)?;
+    ORACLE.save(deps.storage, &deps.api.addr_validate(&oracle)?)?;
+    Ok(Response::default())
+}
+
 fn get_supply<C: CustomQuery>(deps: &Deps<C>, denom: String) -> StdResult<Uint128> {
     let response: SupplyResponse = deps
         .querier
@@ -95,11 +103,12 @@ fn get_lst_denoms(storage: &dyn Storage) -> StdResult<Vec<String>> {
 }
 
 fn get_prices(deps: &Deps, denoms: &[String]) -> VaultResult<HashMap<String, Decimal>> {
+    let oracle = ORACLE.load(deps.storage)?;
     let denoms_with_prices: StdResult<Vec<_>> = denoms
         .iter()
         .map(|denom| -> StdResult<(String, Decimal)> {
-            let price = deps.querier.query_wasm_smart::<Decimal>(
-                "oracle",
+            let price = deps.querier.query_wasm_smart(
+                oracle.to_string(),
                 &OracleQueryMsg::Price {
                     denom: denom.clone(),
                 },

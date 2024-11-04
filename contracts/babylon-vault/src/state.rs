@@ -5,3 +5,4 @@ use mars_owner::Owner;
 pub const OWNER: Owner = Owner::new("owner");
 pub const LSTS: Map<String, Addr> = Map::new("lsts");
 pub const VAULT_DENOM: Item<String> = Item::new("denom");
+pub const ORACLE: Item<Addr> = Item::new("oracle");
