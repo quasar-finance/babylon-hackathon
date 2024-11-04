@@ -1,0 +1,26 @@
+[package]
+name = "interfaces"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+library = []
+
+[dependencies]
+cosmwasm-std = { workspace = true, features = ["cosmwasm_1_4"] }
+cosmwasm-schema = { workspace = true }
+cw-storage-plus = { workspace = true }
+thiserror = { workspace = true }
+cw2 = { workspace = true }
+mars-owner = { workspace = true }
+quasar-std = { workspace = true }
+cosmos-sdk-proto = { workspace = true }
+
+[dev-dependencies]
+prost = { workspace = true }
