@@ -930,6 +930,7 @@ dependencies = [
  "cosmwasm-std",
  "cw-storage-plus",
  "cw2",
+ "interfaces",
  "mars-owner",
  "prost",
  "quasar-std",

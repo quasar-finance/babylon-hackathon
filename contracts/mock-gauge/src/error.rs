@@ -1,5 +1,4 @@
-use crate::state::{LSTS, VAULT_DENOM};
-use cosmwasm_std::{CheckedMultiplyFractionError, Coin, Order, OverflowError, StdError, Storage};
+use cosmwasm_std::StdError;
 use mars_owner::OwnerError;
 use thiserror::Error;
 

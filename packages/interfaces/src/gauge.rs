@@ -1,4 +1,4 @@
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Decimal, Empty};
 
 #[cw_serde]
@@ -8,9 +8,13 @@ pub enum ExecuteMsg<T = Empty> {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg<T = Empty> {
+    #[returns(GetAllocationsResponse)]
     GetAllocations {},
+    #[returns(GetAllocationResponse)]
     GetAllocation { denom: String },
+    #[returns(Empty)]
     Custom(T),
 }
 

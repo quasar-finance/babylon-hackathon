@@ -1,4 +1,4 @@
-use babylon_vault::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use mock_gauge::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use cosmwasm_schema::write_api;
 
 fn main() {
