@@ -6,6 +6,7 @@ use mars_owner::{OwnerResponse, OwnerUpdate};
 pub struct InstantiateMsg {
     pub owner: String,
     pub subdenom: String,
+    pub oracle: String,
 }
 
 #[cw_serde]
@@ -17,6 +18,7 @@ pub enum ExecuteMsg {
     // owner methods
     RegisterLst { denom: String, interface: String },
     UnregisterLst { denom: String },
+    SetOracle{ oracle: String },
     UpdateOwner(OwnerUpdate),
 }
 
