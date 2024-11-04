@@ -25,8 +25,8 @@ pub struct GetAllocationResponse {
 }
 
 #[cw_serde]
-/// Allocation is the
 pub struct Allocation {
     pub destination_id: String,
     pub amount: Decimal,
 }
+

@@ -30,3 +30,4 @@ log = "0.4.17"
 
 quasar-std = { path = "packages/quasar-std" }
 quasar-std-derive = { path = "packages/quasar-std-derive" }
+interfaces = { path = "packages/interfaces" }
