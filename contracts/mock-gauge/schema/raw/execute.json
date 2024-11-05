@@ -60,11 +60,11 @@
             "upsert_allocation": {
               "type": "object",
               "required": [
-                "amout",
+                "amount",
                 "destination_id"
               ],
               "properties": {
-                "amout": {
+                "amount": {
                   "$ref": "#/definitions/Uint128"
                 },
                 "destination_id": {
