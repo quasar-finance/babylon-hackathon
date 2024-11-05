@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Decimal, Empty};
+use cosmwasm_std::{Decimal, Empty, Uint128};
 
 #[cw_serde]
 pub enum ExecuteMsg<T = Empty> {
@@ -33,4 +33,3 @@ pub struct Allocation {
     pub destination_id: String,
     pub amount: Decimal,
 }
-

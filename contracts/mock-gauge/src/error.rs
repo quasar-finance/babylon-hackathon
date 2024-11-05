@@ -12,5 +12,4 @@ pub enum VaultError {
 
     #[error("Destination with id {id} already exists")]
     DestinationAlreadyExists { id: String },
-
 }
