@@ -35,6 +35,7 @@ fn basic_setup(
         InstantiateMsg {
             owner: OWNER.to_string(),
             subdenom: SUBDENOM.to_string(),
+            oracle: "fixme".to_string(),
         },
     )
     .is_ok());

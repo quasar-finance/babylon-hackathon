@@ -1,6 +1,6 @@
 use crate::error::{assert_deposit_funds, assert_withdraw_funds, VaultError};
 use crate::msg::{ExecuteMsg, InstantiateMsg, LstInfo, OracleQueryMsg, QueryMsg};
-use crate::state::{LSTS, OWNER, VAULT_DENOM, ORACLE};
+use crate::state::{LSTS, ORACLE, OWNER, VAULT_DENOM};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{

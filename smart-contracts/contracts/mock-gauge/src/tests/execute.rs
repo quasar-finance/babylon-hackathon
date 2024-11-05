@@ -94,7 +94,7 @@ fn test_upsert_weight_existing_destination() {
 fn test_upsert_weight_updates_existing_weight() {
     let mut deps = setup();
     let destination_id = DESTINATION_IDS[0].to_string();
-    
+
     let initial_amount = Uint128::new(100);
     execute_upsert_weight(deps.as_mut(), destination_id.clone(), initial_amount).unwrap();
 
