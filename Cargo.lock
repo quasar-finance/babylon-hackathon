@@ -368,6 +368,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-cellar-adaptor"
+version = "0.0.1"
+dependencies = [
+ "cosmos-sdk-proto",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw2",
+ "mars-owner",
+ "prost",
+ "quasar-std",
+ "thiserror",
+]
+
+[[package]]
 name = "cw-storage-plus"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
