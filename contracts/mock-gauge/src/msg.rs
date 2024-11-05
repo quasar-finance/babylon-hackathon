@@ -18,7 +18,7 @@ pub enum ExecuteExtensionMsg {
     Owner(OwnerUpdate),
     UpsertAllocation {
         destination_id: String,
-        amout: Uint128,
+        amount: Uint128,
     },
 }
 
