@@ -1,14 +1,10 @@
 use crate::error::VaultError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{PRICES, OWNER};
+use crate::state::{OWNER, PRICES};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    to_json_binary, Binary, Decimal, Deps, DepsMut,
-    Env, MessageInfo, Response, 
-};
+use cosmwasm_std::{to_json_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
-
 
 const CONTRACT_NAME: &str = "quasar:dummy-oracle";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -34,7 +30,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, _env: Env, info: MessageInfo, msg: ExecuteMsg) -> VaultResult {
     match msg {
-        ExecuteMsg::SetPrice{denom, price} => set_price(deps, info, denom, price),
+        ExecuteMsg::SetPrice { denom, price } => set_price(deps, info, denom, price),
         ExecuteMsg::UpdateOwner(update) => Ok(OWNER.update(deps, info, update)?),
     }
 }
@@ -58,5 +54,5 @@ fn query_price(deps: Deps, denom: String) -> VaultResult<Decimal> {
     if let Some(price) = price {
         return Ok(price);
     }
-    Err(VaultError::DenomNotFound{ denom })
+    Err(VaultError::DenomNotFound { denom })
 }

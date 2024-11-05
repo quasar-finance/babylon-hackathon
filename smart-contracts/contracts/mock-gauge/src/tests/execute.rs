@@ -6,7 +6,7 @@ use crate::{
     contract::execute_add_destination,
     tests::setup::{setup, OWNER},
 };
-use cosmwasm_std::testing::{mock_env, mock_info};
+use cosmwasm_std::testing::mock_info;
 use cosmwasm_std::{Response, Uint128};
 
 #[test]
@@ -94,7 +94,7 @@ fn test_upsert_weight_existing_destination() {
 fn test_upsert_weight_updates_existing_weight() {
     let mut deps = setup();
     let destination_id = DESTINATION_IDS[0].to_string();
-    
+
     let initial_amount = Uint128::new(100);
     execute_upsert_weight(deps.as_mut(), destination_id.clone(), initial_amount).unwrap();
 

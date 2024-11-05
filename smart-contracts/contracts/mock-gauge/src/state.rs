@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Empty, StdError, Storage, Uint128};
+use cosmwasm_std::{Empty, StdError, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
-use interfaces::Allocation;
+
 use mars_owner::Owner;
 
 pub const OWNER: Owner = Owner::new("owner");

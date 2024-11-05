@@ -18,7 +18,7 @@ pub enum ExecuteMsg {
     // owner methods
     RegisterLst { denom: String, interface: String },
     UnregisterLst { denom: String },
-    SetOracle{ oracle: String },
+    SetOracle { oracle: String },
     UpdateOwner(OwnerUpdate),
 }
 

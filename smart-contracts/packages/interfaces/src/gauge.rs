@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Decimal, Empty, Uint128};
+use cosmwasm_std::{Decimal, Empty};
 
 #[cw_serde]
 pub enum ExecuteMsg<T = Empty> {
