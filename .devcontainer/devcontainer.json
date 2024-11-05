@@ -1,0 +1,46 @@
+{
+	"name": "Quasar",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"runArgs": [
+		"--init",
+		"--privileged"
+	],
+	"mounts": [
+		"source=vscode-docker-cache-quasar-1,target=/var/lib/docker,type=volume",
+		"source=vscode-zshhistory-quasar-1,target=/commandhistory,type=volume",
+		// "source=vscode-git-cache-quasar,target=/home/vscode/.gitconfig,type=volume",
+		"source=vscode-cargo-cache-quasar-1,target=/home/vscode/.cargo,type=volume",
+		"source=vscode-cargo-target-cache-quasar-1,target=/home/vscode/target,type=volume",
+		"source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind"
+	],
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "zsh",
+				"terminal.integrated.defaultProfile.osx": "zsh",
+				"lldb.executable": "/usr/bin/lldb"
+			},
+			"extensions": [
+				"rust-lang.rust-analyzer",
+				//				"bungcip.better-toml",
+				//				"vadimcn.vscode-lldb",
+				//				"dbaeumer.vscode-eslint",
+				//				"ms-vsocde.vscode-typescript-next",
+				"ms-azuretools.vscode-docker",
+				"eamodio.gitlens",
+				//				"esbenp.prettier-vscode",
+				"juanblanco.solidity",
+				"ms-vsliveshare.vsliveshare",
+				"savioserra.theme-switcher"
+			]
+		}
+	},
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "/bin/zsh .devcontainer/setup.sh",
+	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "vscode"
+}

@@ -1,0 +1,71 @@
+FROM --platform=linux/amd64 ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get clean && apt-get update && apt-get install -y software-properties-common curl wget sudo
+RUN add-apt-repository -y ppa:git-core/ppa
+RUN apt-get update && apt-get install -y python3 python3-venv python3-pip git clang libssl-dev build-essential libclang-dev pkg-config
+
+ARG INSTALL_ZSH="true"
+ARG UPGRADE_PACKAGES="false"
+ARG ENABLE_NONROOT_DOCKER="true"
+ARG USE_MOBY="false"
+ARG USERNAME="vscode"
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+COPY library-scripts/*.sh /tmp/library-scripts/
+RUN apt-get update \
+    && /bin/bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true" \
+    && /bin/bash /tmp/library-scripts/docker-in-docker-debian.sh "${ENABLE_NONROOT_DOCKER}" "${USERNAME}" "${USE_MOBY}" \
+    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts
+
+VOLUME [ "/var/lib/docker" ]
+
+# Setting the ENTRYPOINT to docker-init.sh will start up the Docker Engine
+# inside the container "overrideCommand": false is set in devcontainer.json.
+# The script will also execute CMD if you need to alter startup behaviors.
+ENTRYPOINT [ "/usr/local/share/docker-init.sh" ]
+CMD [ "sleep", "infinity" ]
+
+# persist zsh history
+RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.zsh_history" \
+    && mkdir /commandhistory \
+    && touch /commandhistory/.zsh_history \
+    && chown -R $USERNAME /commandhistory \
+    && echo $SNIPPET >> "/home/$USERNAME/.zshrc"
+
+# install go
+#RUN cd /tmp && wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz && tar -xvf go1.21.6.linux-#amd64.tar.gz -C /usr/local 
+#ENV PATH=$PATH:/usr/local/go/bin:/home/$USERNAME/go/bin
+#ENV GOPATH=/home/$USERNAME/go
+#ENV GOBIN=/usr/local/go/bin
+#RUN chown -R $USERNAME /usr/local/go
+
+# install node
+RUN curl -sL https://deb.nodesource.com/setup_22.x | bash - && apt-get install -y nodejs
+RUN curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list && apt-get update && apt-get install -y yarn
+RUN npm i -g typescript ts-node
+
+#RUN apt-get update && apt-get install -y pkg-config
+
+# install rust
+USER $USERNAME
+RUN cd /home/$USERNAME && curl https://sh.rustup.rs -sSf | bash -s -- -y
+RUN echo 'source $HOME/.cargo/env' >> $HOME/.zshrc
+ENV PATH="/home/$USERNAME/.cargo/bin:${PATH}"
+RUN rustup default stable
+RUN rustup target add wasm32-unknown-unknown
+RUN rustup component add rust-analysis
+RUN rustup component add rust-src
+RUN rustup component add rls
+RUN cargo install just
+RUN cargo install cargo-nextest --locked
+RUN cargo install taplo-cli --locked
+RUN cargo install cargo-watch
+RUN cargo install cargo-limit
+RUN cargo install --git https://github.com/paritytech/cachepot
+
+RUN sudo apt-get update && sudo apt-get install -y unzip protobuf-compiler
+RUN curl -L https://foundry.paradigm.xyz | bash
+ENV RUSTC_WRAPPER="cachepot"
+ENV CARGO_TARGET_DIR="/home/${USERNAME}/target"
