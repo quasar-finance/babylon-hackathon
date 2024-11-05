@@ -1,4 +1,3 @@
-pub mod allocations;
 pub mod deposit;
 pub mod instantiate;
 pub mod register;
