@@ -1,39 +1,48 @@
-<script lang="ts">
-	import { connectKeplr } from '$lib/keplr';
-	import { SigningStargateClient } from '@cosmjs/stargate';
-  
-	let walletAddress = '';
-	let signer: SigningStargateClient;
-  
-	async function connectWallet() {
-		const wallet = await connectKeplr();
 
-		if (wallet.isOk()) {
-			walletAddress = wallet.value.address;
-			signer = wallet.value.signer;
-		}
+
+<main class="content">
+	<h2>Explore the Babylon Liquidity Tool (BLT) 🥪</h2>
+	<ol>
+		<li><span class="number">1</span> Stake any BTC, WBTC or any BTC LST</li>
+		<li><span class="number">2</span> Claim Staking Rewards</li>
+		<li><span class="number">3</span> Vote on Liquidity Allocation</li>
+		<li><span class="number">4</span> Earn Incentives, Points and Rewards</li>
+	</ol>
+</main>
+
+<style>
+	.content {
+		max-width: 600px;
+		margin: 2rem auto;
+		padding: 2rem;
+		background-color: #f3f3f3;
+		border-radius: 8px;
+		text-align: left;
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 	}
-  </script>
-  
-  <main>
-	<h1>Cosmos SDK Transaction Generator</h1>
-  
-	{#if walletAddress}
-	  <p>
-		All transactions are served from the Connected wallet.
-		This means that newly created tokens will also be created under 
-		the namespace of this token.
-	</p>
-	  <p>Connected Wallet: {walletAddress}</p>
-	{:else}
-	  <button on:click={connectWallet}>Connect Keplr Wallet</button>
-	{/if}
-  </main>
-  
-  <style>
-	main {
-	  text-align: center;
-	  padding: 2rem;
+	h2 {
+		font-weight: bold;
+		text-align: center;
 	}
-  </style>
-  
+	ol {
+		padding-left: 1.5rem;
+	}
+	li {
+		margin-bottom: 1rem;
+		font-size: 1rem;
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+	}
+	.number {
+		background-color: #007bff;
+		color: white;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+</style>
