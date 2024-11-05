@@ -23,6 +23,6 @@ fn test_instantiate() {
     );
     assert!(result.is_ok());
 
-    let destinations = query_destinations(deps.as_ref()).unwrap();
-    assert_eq!(destinations, DESTINATIONS);
+    let response = query_destinations(deps.as_ref()).unwrap();
+    assert_eq!(response.destinations, DESTINATIONS);
 }

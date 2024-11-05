@@ -1,6 +1,6 @@
 use crate::error::VaultError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{Destination, Weights, DESTINATIONS, OWNER, WEIGHTS};
+use crate::state::{Destination, Weight, Weights, DESTINATIONS, OWNER, WEIGHTS};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -9,7 +9,9 @@ use cosmwasm_std::{
     SubMsg, SupplyResponse, Uint128,
 };
 use cw2::set_contract_version;
-use interfaces::{Allocation, GetAllocationResponse, GetAllocationsResponse};
+use interfaces::{
+    Allocation, GetAllocationResponse, GetAllocationsResponse, GetDestinationsResponse,
+};
 use quasar_std::quasarlabs::quasarnode::tokenfactory::v1beta1::{
     MsgBurn, MsgCreateDenom, MsgCreateDenomResponse, MsgMint,
 };
@@ -56,6 +58,10 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> G
         }
         interfaces::ExecuteMsg::Custom(ext) => match ext {
             crate::msg::ExecuteExtensionMsg::Owner(update) => Ok(OWNER.update(deps, info, update)?),
+            crate::msg::ExecuteExtensionMsg::UpsertAllocation {
+                destination_id,
+                amout,
+            } => todo!(),
         },
     }
 }
@@ -73,17 +79,40 @@ pub fn execute_add_destination(
 
     DESTINATIONS.save(deps.storage, destination_id.clone(), &Empty::default())?;
 
-    Ok(Response::new().add_attribute("action", "add_destination").add_attribute("destination", destination_id))
+    Ok(Response::new()
+        .add_attribute("action", "add_destination")
+        .add_attribute("destination", destination_id))
+}
+
+pub fn execute_upsert_allocation(
+    deps: DepsMut,
+    destination_id: String,
+    amount: Uint128,
+) -> GaugeResult {
+    if !DESTINATIONS.has(deps.storage, destination_id.clone()) {
+        DESTINATIONS.save(deps.storage, destination_id.clone(), &Empty::default())?;
+    }
+
+    WEIGHTS.add(
+        deps.storage,
+        Weight {
+            destination_id,
+            amount,
+        },
+    )?;
+
+    Ok(Response::new())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> GaugeResult<Binary> {
     match msg {
         interfaces::QueryMsg::GetAllocations {} => Ok(to_json_binary(&query_allocations(deps)?)?),
-        interfaces::QueryMsg::GetAllocation { denom } => Ok(to_json_binary(&query_allocation(deps, denom)?)?),
-        interfaces::QueryMsg::Custom(c) => match c {
-            crate::msg::QueryExtensionMsg::GetDestinations {  } => Ok(to_json_binary(&query_destinations(deps)?)?),
-        },
+        interfaces::QueryMsg::GetAllocation { denom } => {
+            Ok(to_json_binary(&query_allocation(deps, denom)?)?)
+        }
+        interfaces::QueryMsg::GetDestinations {} => Ok(to_json_binary(&query_destinations(deps)?)?),
+        interfaces::QueryMsg::Custom(_) => unimplemented!(),
     }
 }
 
@@ -117,7 +146,7 @@ fn query_allocation(deps: Deps, destination_id: String) -> GaugeResult<GetAlloca
     Ok(response)
 }
 
-pub fn query_destinations(deps: Deps) -> GaugeResult<Vec<Destination>> {
+pub fn query_destinations(deps: Deps) -> GaugeResult<GetDestinationsResponse> {
     let destinations: Result<Vec<Destination>, StdError> = DESTINATIONS
         .range(deps.storage, None, None, Order::Ascending)
         .map(|item| {
@@ -126,5 +155,7 @@ pub fn query_destinations(deps: Deps) -> GaugeResult<Vec<Destination>> {
         })
         .collect();
 
-    Ok(destinations?)
+    Ok(GetDestinationsResponse {
+        destinations: destinations?,
+    })
 }

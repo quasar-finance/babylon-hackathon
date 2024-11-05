@@ -39,6 +39,19 @@
     {
       "type": "object",
       "required": [
+        "get_destinations"
+      ],
+      "properties": {
+        "get_destinations": {
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "custom"
       ],
       "properties": {

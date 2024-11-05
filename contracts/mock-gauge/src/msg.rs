@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Timestamp, Uint128};
+use cosmwasm_std::{Empty, Timestamp, Uint128};
 use interfaces::gauge::{ExecuteMsg as GaugeExecuteMsg, QueryMsg as GaugeQueryMsg};
 use mars_owner::{OwnerResponse, OwnerUpdate};
 
@@ -16,11 +16,10 @@ pub type ExecuteMsg = GaugeExecuteMsg<ExecuteExtensionMsg>;
 #[cw_serde]
 pub enum ExecuteExtensionMsg {
     Owner(OwnerUpdate),
+    UpsertAllocation {
+        destination_id: String,
+        amout: Uint128,
+    },
 }
 
-// #[derive(QueryResponses)]
-pub type QueryMsg = GaugeQueryMsg<QueryExtensionMsg>;
-
-pub enum QueryExtensionMsg {
-    GetDestinations {},
-}
+pub type QueryMsg = GaugeQueryMsg;

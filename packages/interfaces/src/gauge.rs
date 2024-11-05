@@ -14,6 +14,8 @@ pub enum QueryMsg<T = Empty> {
     GetAllocations {},
     #[returns(GetAllocationResponse)]
     GetAllocation { denom: String },
+    #[returns(GetDestinationsResponse)]
+    GetDestinations {},
     #[returns(Empty)]
     Custom(T),
 }
@@ -32,4 +34,9 @@ pub struct GetAllocationResponse {
 pub struct Allocation {
     pub destination_id: String,
     pub amount: Decimal,
+}
+
+#[cw_serde]
+pub struct GetDestinationsResponse {
+    pub destinations: Vec<String>,
 }
