@@ -4,7 +4,9 @@ use crate::state::{Destination, Weights, DESTINATIONS, OWNER, WEIGHTS};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, Addr, BankMsg, BankQuery, Binary, Coin, CustomQuery, Decimal, Deps, DepsMut, Empty, Env, MessageInfo, Order, QueryRequest, Reply, Response, StdResult, Storage, SubMsg, SupplyResponse, Uint128
+    to_json_binary, Addr, BankMsg, BankQuery, Binary, Coin, CustomQuery, Decimal, Deps, DepsMut,
+    Empty, Env, MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult, Storage,
+    SubMsg, SupplyResponse, Uint128,
 };
 use cw2::set_contract_version;
 use interfaces::{Allocation, GetAllocationResponse, GetAllocationsResponse};
@@ -32,6 +34,10 @@ pub fn instantiate(
 
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    for dest in msg.destinations {
+        DESTINATIONS.save(deps.storage, dest, &Empty::default())?;
+    }
+
     Ok(Response::new())
 }
 
@@ -50,7 +56,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> G
         }
         interfaces::ExecuteMsg::Custom(ext) => match ext {
             crate::msg::ExtensionMsg::Owner(update) => Ok(OWNER.update(deps, info, update)?),
-        }
+        },
     }
 }
 
@@ -68,9 +74,9 @@ fn execute_add_destination(
     }
 
     // Save destination
-    DESTINATIONS.save(deps.storage, destination_id, &Empty::default())?;
+    DESTINATIONS.save(deps.storage, destination_id.clone(), &Empty::default())?;
 
-    Ok(Response::new().add_attribute("action", "add_destination"))
+    Ok(Response::new().add_attribute("action", "add_destination").add_attribute("destination", destination_id))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -110,4 +116,16 @@ fn query_allocation(deps: Deps, destination_id: String) -> GaugeResult<Binary> {
     };
     let response = GetAllocationResponse { allocation };
     Ok(to_json_binary(&response)?)
+}
+
+pub fn query_destinations(deps: Deps) -> GaugeResult<Vec<Destination>> {
+    let destinations: Result<Vec<Destination>, StdError> = DESTINATIONS
+        .range(deps.storage, None, None, Order::Ascending)
+        .map(|item| {
+            let (destination, _) = item?;
+            Ok(destination)
+        })
+        .collect();
+
+    Ok(destinations?)
 }

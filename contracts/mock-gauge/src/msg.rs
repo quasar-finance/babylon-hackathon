@@ -8,14 +8,14 @@ use crate::state::Destination;
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub destinations: Vec<Destination>
+    pub destinations: Vec<Destination>,
 }
 
 pub type ExecuteMsg = GaugeExecuteMsg<ExtensionMsg>;
 
 #[cw_serde]
 pub enum ExtensionMsg {
-    Owner(OwnerUpdate)
+    Owner(OwnerUpdate),
 }
 
 // #[derive(QueryResponses)]
