@@ -28,7 +28,6 @@ pub struct Weight {
 }
 
 impl<'a> Weights<'a> {
-    // TODO Laurens rename arguments
     pub const fn new(map_namespace: &'a str, item_namespace: &'a str) -> Self {
         Self {
             weights: Map::new(map_namespace),
