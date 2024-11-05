@@ -60,8 +60,8 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> G
             crate::msg::ExecuteExtensionMsg::Owner(update) => Ok(OWNER.update(deps, info, update)?),
             crate::msg::ExecuteExtensionMsg::UpsertAllocation {
                 destination_id,
-                amout,
-            } => todo!(),
+                amount,
+            } => execute_upsert_weight(deps, destination_id, amount),
         },
     }
 }
@@ -84,7 +84,7 @@ pub fn execute_add_destination(
         .add_attribute("destination", destination_id))
 }
 
-pub fn execute_upsert_allocation(
+pub fn execute_upsert_weight(
     deps: DepsMut,
     destination_id: String,
     amount: Uint128,
