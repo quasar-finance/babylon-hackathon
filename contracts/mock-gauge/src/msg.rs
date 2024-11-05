@@ -11,12 +11,16 @@ pub struct InstantiateMsg {
     pub destinations: Vec<Destination>,
 }
 
-pub type ExecuteMsg = GaugeExecuteMsg<ExtensionMsg>;
+pub type ExecuteMsg = GaugeExecuteMsg<ExecuteExtensionMsg>;
 
 #[cw_serde]
-pub enum ExtensionMsg {
+pub enum ExecuteExtensionMsg {
     Owner(OwnerUpdate),
 }
 
 // #[derive(QueryResponses)]
-pub type QueryMsg = GaugeQueryMsg;
+pub type QueryMsg = GaugeQueryMsg<QueryExtensionMsg>;
+
+pub enum QueryExtensionMsg {
+    GetDestinations {},
+}

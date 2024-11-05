@@ -55,25 +55,22 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> G
             execute_add_destination(deps, info, destination_id)
         }
         interfaces::ExecuteMsg::Custom(ext) => match ext {
-            crate::msg::ExtensionMsg::Owner(update) => Ok(OWNER.update(deps, info, update)?),
+            crate::msg::ExecuteExtensionMsg::Owner(update) => Ok(OWNER.update(deps, info, update)?),
         },
     }
 }
 
-fn execute_add_destination(
+pub fn execute_add_destination(
     deps: DepsMut,
     info: MessageInfo,
     destination_id: String,
 ) -> GaugeResult {
-    // Only owner can add destinations
     OWNER.assert_owner(deps.storage, &info.sender)?;
 
-    // Check if destination already exists
     if DESTINATIONS.has(deps.storage, destination_id.clone()) {
         return Err(VaultError::DestinationAlreadyExists { id: destination_id });
     }
 
-    // Save destination
     DESTINATIONS.save(deps.storage, destination_id.clone(), &Empty::default())?;
 
     Ok(Response::new().add_attribute("action", "add_destination").add_attribute("destination", destination_id))
@@ -82,13 +79,15 @@ fn execute_add_destination(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> GaugeResult<Binary> {
     match msg {
-        interfaces::QueryMsg::GetAllocations {} => query_allocations(deps),
-        interfaces::QueryMsg::GetAllocation { denom } => query_allocation(deps, denom),
-        interfaces::QueryMsg::Custom(_) => unimplemented!(),
+        interfaces::QueryMsg::GetAllocations {} => Ok(to_json_binary(&query_allocations(deps)?)?),
+        interfaces::QueryMsg::GetAllocation { denom } => Ok(to_json_binary(&query_allocation(deps, denom)?)?),
+        interfaces::QueryMsg::Custom(c) => match c {
+            crate::msg::QueryExtensionMsg::GetDestinations {  } => Ok(to_json_binary(&query_destinations(deps)?)?),
+        },
     }
 }
 
-fn query_allocations(deps: Deps) -> GaugeResult<Binary> {
+fn query_allocations(deps: Deps) -> GaugeResult<GetAllocationsResponse> {
     let allocations: Vec<Allocation> = DESTINATIONS
         .range(deps.storage, None, None, Order::Ascending)
         .map(|item| {
@@ -103,10 +102,10 @@ fn query_allocations(deps: Deps) -> GaugeResult<Binary> {
         })
         .collect::<StdResult<Vec<_>>>()?;
 
-    Ok(to_json_binary(&GetAllocationsResponse { allocations })?)
+    Ok(GetAllocationsResponse { allocations })
 }
 
-fn query_allocation(deps: Deps, destination_id: String) -> GaugeResult<Binary> {
+fn query_allocation(deps: Deps, destination_id: String) -> GaugeResult<GetAllocationResponse> {
     let weight = WEIGHTS.get(deps.storage, destination_id.as_str())?;
     let total_weight = WEIGHTS.total(deps.storage)?;
 
@@ -115,7 +114,7 @@ fn query_allocation(deps: Deps, destination_id: String) -> GaugeResult<Binary> {
         amount: Decimal::from_ratio(weight.amount, total_weight),
     };
     let response = GetAllocationResponse { allocation };
-    Ok(to_json_binary(&response)?)
+    Ok(response)
 }
 
 pub fn query_destinations(deps: Deps) -> GaugeResult<Vec<Destination>> {
