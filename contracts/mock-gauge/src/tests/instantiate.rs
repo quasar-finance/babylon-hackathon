@@ -3,7 +3,7 @@ use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use crate::{
     contract::{instantiate, query_destinations},
     msg::InstantiateMsg,
-    tests::setup::{DESTINATIONS, OWNER, USER},
+    tests::setup::{DESTINATION_IDS, OWNER, USER},
 };
 
 #[test]
@@ -18,11 +18,11 @@ fn test_instantiate() {
         info,
         InstantiateMsg {
             owner: OWNER.to_string(),
-            destinations: DESTINATIONS.iter().map(|&s| s.to_string()).collect(), // this is really ugly and should be done simpler,
+            destinations: DESTINATION_IDS.iter().map(|&s| s.to_string()).collect(), // this is really ugly and should be done simpler,
         },
     );
     assert!(result.is_ok());
 
     let response = query_destinations(deps.as_ref()).unwrap();
-    assert_eq!(response.destinations, DESTINATIONS);
+    assert_eq!(response.destinations, DESTINATION_IDS);
 }

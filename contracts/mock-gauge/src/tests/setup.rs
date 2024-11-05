@@ -22,7 +22,7 @@ pub const DEPOSIT_DENOM: &str = "denom1";
 pub const OTHER_DEPOSIT_DENOM: &str = "denom2";
 pub const VAULT_DENOM: &str = "vault_denom";
 
-pub const DESTINATIONS: [&str; 2] = ["id1", "id2"];
+pub const DESTINATION_IDS: [&str; 2] = ["id1", "id2"];
 
 fn basic_setup(
     deps: OwnedDeps<MockStorage, MockApi, MockQuerier, Empty>,
@@ -37,7 +37,7 @@ fn basic_setup(
         info,
         InstantiateMsg {
             owner: OWNER.to_string(),
-            destinations: DESTINATIONS.iter().map(|&s| s.to_string()).collect(), // this is really ugly and should be done simpler
+            destinations: DESTINATION_IDS.iter().map(|&s| s.to_string()).collect(), // this is really ugly and should be done simpler
         },
     )
     .is_ok());

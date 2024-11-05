@@ -1,9 +1,13 @@
+use crate::contract::execute_upsert_weight;
 use crate::error::VaultError;
+use crate::state::{DESTINATIONS, WEIGHTS};
+use crate::tests::setup::DESTINATION_IDS;
 use crate::{
     contract::execute_add_destination,
     tests::setup::{setup, OWNER},
 };
 use cosmwasm_std::testing::{mock_env, mock_info};
+use cosmwasm_std::{Response, Uint128};
 
 #[test]
 fn test_unauthorized_add_destination() {
@@ -54,4 +58,51 @@ fn test_duplicate_add_destination() {
         err,
         VaultError::DestinationAlreadyExists { id } if id == "new_destination"
     ));
+}
+
+#[test]
+fn test_upsert_weight_new_destination() {
+    let mut deps = setup();
+    let destination_id = "new_destination".to_string();
+    let amount = Uint128::new(100);
+
+    let res = execute_upsert_weight(deps.as_mut(), destination_id.clone(), amount).unwrap();
+    assert_eq!(res, Response::new());
+
+    assert!(DESTINATIONS.has(deps.as_ref().storage, destination_id.clone()));
+
+    let stored_weight = WEIGHTS.get(deps.as_ref().storage, &destination_id).unwrap();
+    assert_eq!(stored_weight.destination_id, destination_id);
+    assert_eq!(stored_weight.amount, amount);
+}
+
+#[test]
+fn test_upsert_weight_existing_destination() {
+    let mut deps = setup();
+    let destination_id = DESTINATION_IDS[0].to_string();
+    let amount = Uint128::new(100);
+
+    let res = execute_upsert_weight(deps.as_mut(), destination_id.clone(), amount).unwrap();
+    assert_eq!(res, Response::new());
+
+    let stored_weight = WEIGHTS.get(deps.as_ref().storage, &destination_id).unwrap();
+    assert_eq!(stored_weight.destination_id, destination_id);
+    assert_eq!(stored_weight.amount, amount);
+}
+
+#[test]
+fn test_upsert_weight_updates_existing_weight() {
+    let mut deps = setup();
+    let destination_id = DESTINATION_IDS[0].to_string();
+    
+    let initial_amount = Uint128::new(100);
+    execute_upsert_weight(deps.as_mut(), destination_id.clone(), initial_amount).unwrap();
+
+    let new_amount = Uint128::new(200);
+    let res = execute_upsert_weight(deps.as_mut(), destination_id.clone(), new_amount).unwrap();
+    assert_eq!(res, Response::new());
+
+    let stored_weight = WEIGHTS.get(deps.as_ref().storage, &destination_id).unwrap();
+    assert_eq!(stored_weight.destination_id, destination_id);
+    assert_eq!(stored_weight.amount, new_amount);
 }
