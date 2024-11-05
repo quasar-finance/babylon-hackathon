@@ -6,7 +6,7 @@ use crate::{
     contract::execute_add_destination,
     tests::setup::{setup, OWNER},
 };
-use cosmwasm_std::testing::{mock_env, mock_info};
+use cosmwasm_std::testing::mock_info;
 use cosmwasm_std::{Response, Uint128};
 
 #[test]

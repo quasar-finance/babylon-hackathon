@@ -1,19 +1,15 @@
 use crate::error::VaultError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{Destination, Weight, Weights, DESTINATIONS, OWNER, WEIGHTS};
+use crate::state::{Destination, Weight, DESTINATIONS, OWNER, WEIGHTS};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, Addr, BankMsg, BankQuery, Binary, Coin, CustomQuery, Decimal, Deps, DepsMut,
-    Empty, Env, MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult, Storage,
-    SubMsg, SupplyResponse, Uint128,
+    to_json_binary, Binary, Decimal, Deps, DepsMut, Empty, Env, MessageInfo, Order, Reply,
+    Response, StdError, StdResult, Uint128,
 };
 use cw2::set_contract_version;
 use interfaces::{
     Allocation, GetAllocationResponse, GetAllocationsResponse, GetDestinationsResponse,
-};
-use quasar_std::quasarlabs::quasarnode::tokenfactory::v1beta1::{
-    MsgBurn, MsgCreateDenom, MsgCreateDenomResponse, MsgMint,
 };
 
 const CONTRACT_NAME: &str = "quasar:mock-gauge";
@@ -24,7 +20,7 @@ pub type GaugeResult<T = Response> = Result<T, VaultError>;
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> GaugeResult {
@@ -44,14 +40,12 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> GaugeResult {
-    match reply.id {
-        _ => unimplemented!(),
-    }
+pub fn reply(_deps: DepsMut, _env: Env, _reply: Reply) -> GaugeResult {
+    unimplemented!()
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> GaugeResult {
+pub fn execute(deps: DepsMut, _env: Env, info: MessageInfo, msg: ExecuteMsg) -> GaugeResult {
     match msg {
         interfaces::ExecuteMsg::AddDestination { destination_id } => {
             execute_add_destination(deps, info, destination_id)
@@ -105,7 +99,7 @@ pub fn execute_upsert_weight(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> GaugeResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> GaugeResult<Binary> {
     match msg {
         interfaces::QueryMsg::GetAllocations {} => Ok(to_json_binary(&query_allocations(deps)?)?),
         interfaces::QueryMsg::GetAllocation { denom } => {

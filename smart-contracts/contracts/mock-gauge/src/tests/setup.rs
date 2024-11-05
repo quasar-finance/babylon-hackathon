@@ -1,26 +1,11 @@
-use crate::{
-    contract::{instantiate, reply},
-    msg::InstantiateMsg,
-    state::Destination,
-};
+use crate::{contract::instantiate, msg::InstantiateMsg};
 use cosmwasm_std::{
-    from_json,
-    testing::{
-        mock_dependencies, mock_dependencies_with_balances, mock_env, mock_info, MockApi,
-        MockQuerier, MockStorage,
-    },
-    to_json_binary, Coin, ContractResult, Decimal, Empty, OwnedDeps, QuerierResult, Reply,
-    SubMsgResponse, SubMsgResult, SystemError, SystemResult, WasmQuery,
+    testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage},
+    Empty, OwnedDeps,
 };
-use prost::Message;
-use quasar_std::quasarlabs::quasarnode::tokenfactory::v1beta1::MsgCreateDenomResponse;
 
 pub const OWNER: &str = "owner";
 pub const USER: &str = "user";
-pub const SUBDENOM: &str = "subdenom";
-pub const DEPOSIT_DENOM: &str = "denom1";
-pub const OTHER_DEPOSIT_DENOM: &str = "denom2";
-pub const VAULT_DENOM: &str = "vault_denom";
 
 pub const DESTINATION_IDS: [&str; 2] = ["id1", "id2"];
 
@@ -47,12 +32,5 @@ fn basic_setup(
 
 pub fn setup() -> OwnedDeps<MockStorage, MockApi, MockQuerier, Empty> {
     let deps = mock_dependencies();
-    basic_setup(deps)
-}
-
-pub fn setup_with_balances(
-    balances: &[(&str, &[Coin])],
-) -> OwnedDeps<MockStorage, MockApi, MockQuerier, Empty> {
-    let deps = mock_dependencies_with_balances(balances);
     basic_setup(deps)
 }

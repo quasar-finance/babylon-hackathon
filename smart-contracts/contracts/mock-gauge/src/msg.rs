@@ -1,7 +1,7 @@
-use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Empty, Timestamp, Uint128};
+use cosmwasm_schema::cw_serde;
+use cosmwasm_std::Uint128;
 use interfaces::gauge::{ExecuteMsg as GaugeExecuteMsg, QueryMsg as GaugeQueryMsg};
-use mars_owner::{OwnerResponse, OwnerUpdate};
+use mars_owner::OwnerUpdate;
 
 use crate::state::Destination;
 
