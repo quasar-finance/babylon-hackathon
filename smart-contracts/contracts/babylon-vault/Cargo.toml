@@ -34,5 +34,8 @@ quasar = { workspace = true }
 quasar-std = { workspace = true }
 cosmos-sdk-proto = { workspace = true }
 
+# import ecosystem adaptor
+ecosystem-adaptor = {path = "../ecosystem-adaptor", features = ["library"], default-features = false}
+
 [dev-dependencies]
 prost = { workspace = true }

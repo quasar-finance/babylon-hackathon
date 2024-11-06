@@ -6,9 +6,10 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_json_binary, BankMsg, BankQuery, Binary, Coin, CustomQuery, Decimal, Deps, DepsMut, Env,
     MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult, Storage, SubMsg,
-    SupplyResponse, Uint128,
+    SupplyResponse, Uint128, WasmQuery,
 };
 use cw2::set_contract_version;
+use ecosystem_adaptor::msg as EcosystemAdaptorMsg;
 use quasar_std::quasarlabs::quasarnode::tokenfactory::v1beta1::{
     MsgBurn, MsgCreateDenom, MsgCreateDenomResponse, MsgMint,
 };
@@ -167,6 +168,40 @@ fn get_balances(deps: &Deps, address: String, denoms: &[String]) -> StdResult<Ve
             deps.querier.query_balance(address.clone(), denom.clone())
         })
         .collect()
+}
+
+pub fn get_destination_balance(deps: Deps, destination: String) -> StdResult<Vec<Coin>> {
+    let addr = DESTINATIONS.load(deps.storage, destination)?;
+
+    let balance_query = EcosystemAdaptorMsg::QueryMsg::BalanceQuery {};
+
+    let balance_response: EcosystemAdaptorMsg::BalanceResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: addr.to_string(),
+            msg: to_json_binary(&balance_query)?,
+        }))?;
+
+    Ok(balance_response.balance)
+}
+
+pub fn get_all_adaptor_balances(deps: Deps) -> StdResult<Vec<Coin>> {
+    let mut total_balances: Vec<Coin> = vec![];
+
+    for result in DESTINATIONS.range(deps.storage, None, None, cosmwasm_std::Order::Ascending) {
+        let (_key, addr) = result?;
+
+        let balance = get_destination_balance(deps, addr.to_string())?;
+
+        for coin in balance {
+            if let Some(existing_coin) = total_balances.iter_mut().find(|c| c.denom == coin.denom) {
+                existing_coin.amount += coin.amount;
+            } else {
+                total_balances.push(coin);
+            }
+        }
+    }
+
+    Ok(total_balances)
 }
 
 fn vault_value(balances: &[Coin], prices: &HashMap<String, Decimal>) -> VaultResult<Uint128> {
