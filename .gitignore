@@ -30,3 +30,5 @@ containers_homes/
 **/*.rs.bk
 .devcontainer/
 
+
+.sveltekit
