@@ -1,30 +1,24 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 
-bash env_euphrates.sh
+for cmd in babylond jq git; do
+    if ! command -v $cmd &> /dev/null; then
+        echo "Error: $cmd is required but not installed."
+        exit 1
+    fi
+done
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
-cd ${REPO_ROOT}/smart-contracts && cargo wasm
 
+source ${REPO_ROOT}/scripts/smart-contracts/env_euphrates.sh
 
-# Create artifacts directory if it doesn't exist
+cd ${REPO_ROOT}/smart-contracts
+
 ARTIFACTS_DIR="./artifacts"
 mkdir -p "$ARTIFACTS_DIR"
 
-echo "dang"
-for contract_dir in contracts/*/; do
-    echo $contract_dir
-    echo "dir"
-    if [ -f "${contract_dir}Cargo.toml" ]; then
-        contract_name=$(basename "$contract_dir")
-        
-        artifact_name="${contract_name//-/_}"
-        
-        # Build the contract
-        echo "Building $contract_name..."
-        (cd "$contract_dir" && cargo build --release --target wasm32-unknown-unknown)
-        
-        # Copy the compiled wasm to artifacts directory
-        cp "target/wasm32-unknown-unknown/release/${artifact_name}.wasm" "$ARTIFACTS_DIR/"
-    fi
-done
+# we need to use the docker builder do to wasm artifact size
+docker run --rm -v "$(pwd)":/code \
+  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
+  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+  cosmwasm/optimizer:0.16.0
