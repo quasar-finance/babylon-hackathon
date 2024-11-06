@@ -16,7 +16,7 @@ pub enum ExecuteMsg {
     Withdraw {},
     Claim {},
     // owner methods
-    RegisterLst { denom: String, interface: String },
+    RegisterLst { denom: String },
     UnregisterLst { denom: String },
     SetOracle { oracle: String },
     UpdateOwner(OwnerUpdate),
@@ -29,19 +29,13 @@ pub struct Claim {
 }
 
 #[cw_serde]
-pub struct LstInfo {
-    pub denom: String,
-    pub interface: String,
-}
-
-#[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(Uint128)]
     Value {},
     #[returns(OwnerResponse)]
     Owner {},
-    #[returns(Vec<LstInfo>)]
+    #[returns(Vec<String>)]
     Lsts {},
     #[returns(String)]
     Denom {},
