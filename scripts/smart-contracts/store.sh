@@ -41,5 +41,3 @@ fi
 filename=$(basename "$artifact" .wasm)
 jq --arg name "$filename" --arg id "$code_id" \
     '. + {($name): $id}' "$json_file" > "$json_file.tmp" && mv "$json_file.tmp" "$json_file"
-
-
