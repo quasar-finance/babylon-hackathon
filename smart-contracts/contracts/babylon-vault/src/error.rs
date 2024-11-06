@@ -29,9 +29,6 @@ pub enum VaultError {
 
     #[error("{0}")]
     Cw20(#[from] Cw20Error),
-
-    #[error("This message does no accept funds")]
-    NonPayable {},
 }
 
 fn assert_non_empty_funds(funds: &[Coin]) -> Result<(), VaultError> {
