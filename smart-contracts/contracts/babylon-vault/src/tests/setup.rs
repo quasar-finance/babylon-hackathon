@@ -1,5 +1,5 @@
 use crate::{
-    contract::{instantiate, reply, CREATE_DENOM_REPLY_ID},
+    contract::{instantiate, reply},
     msg::{InstantiateMsg, OracleQueryMsg},
 };
 use cosmwasm_std::{
@@ -41,24 +41,6 @@ fn basic_setup(
     )
     .is_ok());
 
-    assert!(reply(
-        deps.as_mut(),
-        env,
-        Reply {
-            id: CREATE_DENOM_REPLY_ID,
-            result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![],
-                data: Some(
-                    MsgCreateDenomResponse {
-                        new_token_denom: VAULT_DENOM.to_string(),
-                    }
-                    .encode_to_vec()
-                    .into()
-                ),
-            })
-        }
-    )
-    .is_ok());
     deps
 }
 

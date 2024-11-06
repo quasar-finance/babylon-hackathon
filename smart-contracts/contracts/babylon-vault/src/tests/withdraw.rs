@@ -20,8 +20,16 @@ fn withdraw_with_wrong_denom_fails() {
     let mut deps = setup();
     let env = mock_env();
 
-    let info = mock_info(USER, &coins(1, DEPOSIT_DENOM));
-    let err = execute(deps.as_mut(), env, info, ExecuteMsg::Withdraw {}).unwrap_err();
+    let info = mock_info(USER, &[]);
+    let err = execute(
+        deps.as_mut(),
+        env,
+        info,
+        ExecuteMsg::Withdraw {
+            amount: Uint128::new(1),
+        },
+    )
+    .unwrap_err();
     assert_eq!(
         err,
         VaultError::DenomNotFound {
@@ -36,7 +44,15 @@ fn withdraw_without_funds_fails() {
     let env = mock_env();
     let info = mock_info(USER, &[]);
 
-    let err = execute(deps.as_mut(), env, info, ExecuteMsg::Withdraw {}).unwrap_err();
+    let err = execute(
+        deps.as_mut(),
+        env,
+        info,
+        ExecuteMsg::Withdraw {
+            amount: Uint128::new(0),
+        },
+    )
+    .unwrap_err();
     assert_eq!(err, VaultError::InvalidFunds {});
 }
 
@@ -72,8 +88,16 @@ fn test_withdrawal() {
     assert_eq!(value, Uint128::from(12300u128));
 
     let withdraw_amount = 10000;
-    let info = mock_info(USER, &[coin(withdraw_amount, VAULT_DENOM.to_string())]);
-    let response = execute(deps.as_mut(), env.clone(), info, ExecuteMsg::Withdraw {}).unwrap();
+    let info = mock_info(USER, &[]);
+    let response = execute(
+        deps.as_mut(),
+        env.clone(),
+        info,
+        ExecuteMsg::Withdraw {
+            amount: Uint128::new(withdraw_amount),
+        },
+    )
+    .unwrap();
     assert_eq!(response.messages.len(), 2);
     assert_eq!(
         response.messages[0].msg,
@@ -145,8 +169,16 @@ fn test_withdrawal_with_two_registered_lsts() {
     assert_eq!(value, Uint128::from(61500u128));
 
     let withdraw_amount = 10000;
-    let info = mock_info(USER, &[coin(withdraw_amount, VAULT_DENOM.to_string())]);
-    let response = execute(deps.as_mut(), env.clone(), info, ExecuteMsg::Withdraw {}).unwrap();
+    let info = mock_info(USER, &[]);
+    let response = execute(
+        deps.as_mut(),
+        env.clone(),
+        info,
+        ExecuteMsg::Withdraw {
+            amount: Uint128::new(withdraw_amount),
+        },
+    )
+    .unwrap();
     assert_eq!(response.messages.len(), 2);
     assert_eq!(
         response.messages[0].msg,
