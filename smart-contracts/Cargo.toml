@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = ["contracts/*", "interfaces", "packages/*", "proto-build"]
+members = ["contracts/*", "packages/*", "proto-build"]
 
 [workspace.dependencies]
 cosmwasm-std = "1.5.4"
@@ -11,7 +11,6 @@ cw-storage-plus = "1.2.0"
 cw2 = "1.1.2"
 thiserror = { version = "1.0.56" }
 polytone = "1.0.0"
-polytone-note = "1.0.0"
 
 # protobuf code generation
 prost = {version = "0.12.3", default-features = false, features = ["std"]}
@@ -30,6 +29,7 @@ prettyplease = "0.1.16"
 heck = "0.4.0"
 log = "0.4.17"
 
-
+quasar = { path = "packages/quasar" }
 quasar-std = { path = "packages/quasar-std" }
 quasar-std-derive = { path = "packages/quasar-std-derive" }
+interfaces = { path = "packages/interfaces" }
