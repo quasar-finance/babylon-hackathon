@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Coin, Timestamp, Uint128};
 use mars_owner::{OwnerResponse, OwnerUpdate};
 
 #[cw_serde]
@@ -36,6 +36,7 @@ pub enum ExecuteMsg {
         oracle: String,
     },
     UpdateOwner(OwnerUpdate),
+    Rebalance {},
 }
 
 #[cw_serde]

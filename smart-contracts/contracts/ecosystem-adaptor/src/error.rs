@@ -25,7 +25,7 @@ pub enum AdaptorError {
 }
 
 fn assert_non_empty_funds(funds: &[Coin]) -> Result<(), AdaptorError> {
-    if funds.len() == 0 {
+    if !funds.is_empty() {
         return Err(AdaptorError::InvalidFunds {});
     }
 
