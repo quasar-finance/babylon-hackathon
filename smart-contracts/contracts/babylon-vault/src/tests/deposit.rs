@@ -69,8 +69,7 @@ fn first_successful_deposit_mints_fund_tokens_according_to_first_provided_asset(
         env.clone(),
         info.clone(),
         ExecuteMsg::RegisterLst {
-            denom: DEPOSIT_DENOM.to_string(),
-            interface: "interface".to_string(),
+            denom: DEPOSIT_DENOM.to_string()
         }
     )
     .is_ok());
@@ -130,8 +129,7 @@ fn second_successful_deposit_mints_fund_tokens_according_to_share_of_assets() {
         env.clone(),
         info.clone(),
         ExecuteMsg::RegisterLst {
-            denom: DEPOSIT_DENOM.to_string(),
-            interface: "interface".to_string(),
+            denom: DEPOSIT_DENOM.to_string()
         }
     )
     .is_ok());
@@ -141,7 +139,6 @@ fn second_successful_deposit_mints_fund_tokens_according_to_share_of_assets() {
         info.clone(),
         ExecuteMsg::RegisterLst {
             denom: OTHER_DEPOSIT_DENOM.to_string(),
-            interface: "interface".to_string(),
         }
     )
     .is_ok());

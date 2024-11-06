@@ -27,6 +27,7 @@ fn test_instantiate() {
             owner: OWNER.to_string(),
             subdenom: SUBDENOM.to_string(),
             oracle: "oracle".to_string(),
+            gauge: "gauge".to_string(),
         },
     );
     assert!(result.is_ok());

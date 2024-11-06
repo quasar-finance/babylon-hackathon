@@ -63,7 +63,6 @@ fn test_withdrawal() {
         info.clone(),
         ExecuteMsg::RegisterLst {
             denom: DEPOSIT_DENOM.to_string(),
-            interface: "interface".to_string(),
         }
     )
     .is_ok());
@@ -128,7 +127,6 @@ fn test_withdrawal_with_two_registered_lsts() {
         info.clone(),
         ExecuteMsg::RegisterLst {
             denom: DEPOSIT_DENOM.to_string(),
-            interface: "interface".to_string(),
         }
     )
     .is_ok());
@@ -138,7 +136,6 @@ fn test_withdrawal_with_two_registered_lsts() {
         info.clone(),
         ExecuteMsg::RegisterLst {
             denom: OTHER_DEPOSIT_DENOM.to_string(),
-            interface: "interface".to_string(),
         }
     )
     .is_ok());

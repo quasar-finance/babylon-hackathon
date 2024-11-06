@@ -1,18 +1,18 @@
 use crate::error::{assert_deposit_funds, assert_withdraw_funds, VaultError};
-use crate::msg::{ExecuteMsg, InstantiateMsg, LstInfo, OracleQueryMsg, QueryMsg};
-use crate::state::{LSTS, ORACLE, OWNER, VAULT_DENOM};
+use crate::msg::{DestinationInfo, ExecuteMsg, InstantiateMsg, OracleQueryMsg, QueryMsg};
+use crate::state::{DESTINATIONS, GAUGE, LSTS, ORACLE, OWNER, VAULT_DENOM};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_json_binary, Addr, BankMsg, BankQuery, Binary, Coin, CustomQuery, Decimal, Deps,
-    DepsMut, Env, MessageInfo, Order, QueryRequest, Reply, Response, StdResult, Storage, SubMsg,
+    to_json_binary, BankMsg, BankQuery, Binary, Coin, CustomQuery, Decimal, Deps, DepsMut, Env,
+    MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult, Storage, SubMsg,
     SupplyResponse, Uint128,
 };
 use cw2::set_contract_version;
 use quasar_std::quasarlabs::quasarnode::tokenfactory::v1beta1::{
     MsgBurn, MsgCreateDenom, MsgCreateDenomResponse, MsgMint,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 const CONTRACT_NAME: &str = "quasar:babylon-vault";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -34,6 +34,8 @@ pub fn instantiate(
         mars_owner::OwnerInit::SetInitialOwner { owner: msg.owner },
     )?;
     ORACLE.save(deps.storage, &deps.api.addr_validate(&msg.oracle)?)?;
+    LSTS.save(deps.storage, &HashSet::new())?;
+    GAUGE.save(deps.storage, &deps.api.addr_validate(&msg.gauge)?)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let msg = MsgCreateDenom {
         sender: env.contract.address.to_string(),
@@ -59,8 +61,15 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> VaultResult {
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> VaultResult {
     match msg {
         ExecuteMsg::UpdateOwner(update) => Ok(OWNER.update(deps, info, update)?),
-        ExecuteMsg::RegisterLst { denom, interface } => register_lst(deps, info, denom, interface),
+        ExecuteMsg::RegisterLst { denom } => register_lst(deps, info, denom),
         ExecuteMsg::UnregisterLst { denom } => unregister_lst(deps, info, denom),
+        ExecuteMsg::RegisterDestination {
+            destination,
+            adaptor,
+        } => register_destination(deps, info, destination, adaptor),
+        ExecuteMsg::UnregisterDestination { destination } => {
+            unregister_destination(deps, info, destination)
+        }
         ExecuteMsg::SetOracle { oracle } => set_oracle(deps, info, oracle),
         ExecuteMsg::Deposit {} => deposit(deps, env, info),
         ExecuteMsg::Withdraw {} => withdraw(deps, env, info),
@@ -68,21 +77,52 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> V
     }
 }
 
-fn register_lst(deps: DepsMut, info: MessageInfo, denom: String, interface: String) -> VaultResult {
+fn register_lst(deps: DepsMut, info: MessageInfo, denom: String) -> VaultResult {
     OWNER.assert_owner(deps.storage, &info.sender)?;
-    LSTS.save(deps.storage, denom, &deps.api.addr_validate(&interface)?)?;
+    LSTS.update(deps.storage, |lsts| -> StdResult<HashSet<String>> {
+        let mut lsts = lsts;
+        lsts.insert(denom);
+        Ok(lsts)
+    })?;
     Ok(Response::default())
 }
 
 fn unregister_lst(deps: DepsMut, info: MessageInfo, denom: String) -> VaultResult {
     OWNER.assert_owner(deps.storage, &info.sender)?;
-    let interface = LSTS.may_load(deps.storage, denom.clone())?;
-    if interface.is_some() {
-        LSTS.remove(deps.storage, denom);
-        Ok(Response::default())
+    LSTS.update(deps.storage, |lsts| -> StdResult<HashSet<String>> {
+        let mut lsts = lsts;
+        if lsts.remove(&denom) {
+            Ok(lsts)
+        } else {
+            Err(StdError::generic_err("Denom not found"))
+        }
+    })?;
+    Ok(Response::default())
+}
+
+fn register_destination(
+    deps: DepsMut,
+    info: MessageInfo,
+    destination: String,
+    adaptor: String,
+) -> VaultResult {
+    OWNER.assert_owner(deps.storage, &info.sender)?;
+    DESTINATIONS.save(
+        deps.storage,
+        destination,
+        &deps.api.addr_validate(&adaptor)?,
+    )?;
+    Ok(Response::default())
+}
+
+fn unregister_destination(deps: DepsMut, info: MessageInfo, destination: String) -> VaultResult {
+    OWNER.assert_owner(deps.storage, &info.sender)?;
+    if DESTINATIONS.has(deps.storage, destination.clone()) {
+        DESTINATIONS.remove(deps.storage, destination);
     } else {
-        Err(VaultError::DenomNotFound { denom })
+        return Err(VaultError::DestinationNotFound { destination });
     }
+    Ok(Response::default())
 }
 
 fn set_oracle(deps: DepsMut, info: MessageInfo, oracle: String) -> VaultResult {
@@ -99,7 +139,7 @@ fn get_supply<C: CustomQuery>(deps: &Deps<C>, denom: String) -> StdResult<Uint12
 }
 
 fn get_lst_denoms(storage: &dyn Storage) -> StdResult<Vec<String>> {
-    LSTS.keys(storage, None, None, Order::Ascending).collect()
+    Ok(LSTS.load(storage)?.into_iter().collect())
 }
 
 fn get_prices(deps: &Deps, denoms: &[String]) -> VaultResult<HashMap<String, Decimal>> {
@@ -187,7 +227,7 @@ fn withdraw(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
     let balances = get_balances(&deps.as_ref(), contract_address.clone(), &lst_denoms)?;
     let claim_ratio = Decimal::from_ratio(info.funds[0].amount, existing_shares);
 
-    let claim_funds: Result<_, _> = balances
+    let claim_funds: Result<Vec<_>, _> = balances
         .into_iter()
         .map(|balance| -> VaultResult<Coin> {
             Ok(Coin {
@@ -196,6 +236,8 @@ fn withdraw(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
             })
         })
         .collect();
+    let mut claim_funds = claim_funds?;
+    claim_funds.sort_by(|a, b| a.denom.cmp(&b.denom));
 
     let burn_msg = MsgBurn {
         sender: contract_address.clone(),
@@ -207,38 +249,35 @@ fn withdraw(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
     };
     let send_msg = BankMsg::Send {
         to_address: info.sender.to_string(),
-        amount: claim_funds?,
+        amount: claim_funds,
     };
     Ok(Response::default()
         .add_message(burn_msg)
         .add_message(send_msg))
 }
 
+fn get_destinations(storage: &dyn Storage) -> VaultResult<Vec<DestinationInfo>> {
+    let destinations: Result<Vec<_>, _> = DESTINATIONS
+        .range(storage, None, None, Order::Ascending)
+        .collect();
+    Ok(destinations?
+        .into_iter()
+        .map(|(destination, adaptor)| DestinationInfo {
+            destination,
+            adaptor,
+        })
+        .collect())
+}
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> VaultResult<Binary> {
     match msg {
         QueryMsg::Owner {} => Ok(to_json_binary(&OWNER.query(deps.storage)?)?),
-        QueryMsg::Lsts {} => Ok(to_json_binary(&query_lsts(deps)?)?),
+        QueryMsg::Lsts {} => Ok(to_json_binary(&get_lst_denoms(deps.storage)?)?),
+        QueryMsg::Destinations {} => Ok(to_json_binary(&get_destinations(deps.storage)?)?),
         QueryMsg::Denom {} => Ok(to_json_binary(&VAULT_DENOM.load(deps.storage)?)?),
         QueryMsg::Value {} => Ok(to_json_binary(&query_value(deps, env)?)?),
     }
-}
-
-fn query_lsts(deps: Deps) -> StdResult<Vec<LstInfo>> {
-    let lsts: StdResult<Vec<(String, Addr)>> = LSTS
-        .range(deps.storage, None, None, Order::Ascending)
-        .collect();
-    let lsts = lsts?;
-    let infos: Vec<LstInfo> = lsts
-        .into_iter()
-        .map(|(denom, interface)| -> LstInfo {
-            LstInfo {
-                denom,
-                interface: interface.to_string(),
-            }
-        })
-        .collect();
-    Ok(infos)
 }
 
 fn query_value(deps: Deps, env: Env) -> VaultResult<Uint128> {
@@ -246,53 +285,4 @@ fn query_value(deps: Deps, env: Env) -> VaultResult<Uint128> {
     let prices = get_prices(&deps, &lst_denoms)?;
     let balances = get_balances(&deps, env.contract.address.to_string(), &lst_denoms)?;
     vault_value(&balances, &prices)
-}
-
-#[derive(PartialEq, Debug)]
-pub struct Changes {
-    pub add: Vec<Coin>,
-    pub remove: Vec<Coin>,
-}
-
-impl Changes {
-    pub fn new(add: Vec<Coin>, remove: Vec<Coin>) -> Self {
-        Self { add, remove }
-    }
-}
-
-impl Default for Changes {
-    fn default() -> Self {
-        Self::new(vec![], vec![])
-    }
-}
-
-pub fn compute_changes(current: &[Coin], desired: &[Coin]) -> Changes {
-    let add = desired
-        .iter()
-        .map(|d| {
-            let current_allocations: Vec<&Coin> =
-                current.iter().filter(|c| c.denom == d.denom).collect();
-            let mut result = coin(d.amount.into(), d.denom.clone());
-            if !current_allocations.is_empty() {
-                result.amount -= std::cmp::min(current_allocations[0].amount, result.amount);
-            }
-            result
-        })
-        .filter(|x| !x.amount.is_zero())
-        .collect();
-    let remove = current
-        .iter()
-        .map(|c| {
-            let desired_allocations: Vec<&Coin> =
-                desired.iter().filter(|d| d.denom == c.denom).collect();
-            let mut result = coin(c.amount.into(), c.denom.clone());
-            if !desired_allocations.is_empty() {
-                result.amount -= std::cmp::min(desired_allocations[0].amount, result.amount);
-            }
-            result
-        })
-        .filter(|x| !x.amount.is_zero())
-        .collect();
-
-    Changes::new(add, remove)
 }

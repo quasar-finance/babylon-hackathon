@@ -1,5 +1,5 @@
 use crate::state::{LSTS, VAULT_DENOM};
-use cosmwasm_std::{CheckedMultiplyFractionError, Coin, Order, OverflowError, StdError, Storage};
+use cosmwasm_std::{CheckedMultiplyFractionError, Coin, OverflowError, StdError, Storage};
 use mars_owner::OwnerError;
 use thiserror::Error;
 
@@ -20,6 +20,9 @@ pub enum VaultError {
     #[error("{denom} not found")]
     DenomNotFound { denom: String },
 
+    #[error("Destination {destination} not found")]
+    DestinationNotFound { destination: String },
+
     #[error("invalid funds")]
     InvalidFunds {},
 }
@@ -35,8 +38,8 @@ fn assert_non_empty_funds(funds: &[Coin]) -> Result<(), VaultError> {
 pub fn assert_deposit_funds(storage: &dyn Storage, funds: &[Coin]) -> Result<(), VaultError> {
     assert_non_empty_funds(funds)?;
 
-    let lsts: Result<Vec<String>, _> = LSTS.keys(storage, None, None, Order::Ascending).collect();
-    if !lsts?.contains(&funds[0].denom) {
+    let lsts = LSTS.load(storage)?;
+    if !lsts.contains(&funds[0].denom) {
         return Err(VaultError::DenomNotFound {
             denom: funds[0].denom.clone(),
         });
