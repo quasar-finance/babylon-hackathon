@@ -1,5 +1,6 @@
 use crate::state::{LSTS, VAULT_DENOM};
 use cosmwasm_std::{CheckedMultiplyFractionError, Coin, OverflowError, StdError, Storage};
+use cw20_base::ContractError as Cw20Error;
 use mars_owner::OwnerError;
 use thiserror::Error;
 
@@ -25,6 +26,9 @@ pub enum VaultError {
 
     #[error("invalid funds")]
     InvalidFunds {},
+
+    #[error("{0}")]
+    Cw20(#[from] Cw20Error),
 }
 
 fn assert_non_empty_funds(funds: &[Coin]) -> Result<(), VaultError> {
