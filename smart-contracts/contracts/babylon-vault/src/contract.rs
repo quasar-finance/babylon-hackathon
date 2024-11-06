@@ -4,15 +4,17 @@ use crate::state::{DESTINATIONS, GAUGE, LSTS, ORACLE, OWNER};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, BankMsg, Binary, Coin, Decimal, Deps, DepsMut, Env,
-    MessageInfo, Order, QueryRequest, Response, StdError, StdResult, Storage,
-    Uint128, WasmQuery,
+    to_json_binary, Addr, BankMsg, Binary, CheckedMultiplyFractionError, Coin, CosmosMsg, Decimal,
+    Deps, DepsMut, Empty, Env, MessageInfo, Order, QueryRequest, Response, StdError, StdResult,
+    Storage, Uint128, WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
-use ecosystem_adaptor::msg as EcosystemAdaptorMsg;
 use cw20_base::contract::{execute_burn, execute_mint, query_balance, query_token_info};
 use cw20_base::enumerable::query_all_accounts;
 use cw20_base::state::{MinterData, TokenInfo, TOKEN_INFO};
+use ecosystem_adaptor::msg as EcosystemAdaptorMsg;
+use interfaces::gauge::{GetAllocationsResponse, QueryMsg as GaugeQueryMsg};
+use quasar::allocations::compute_changes;
 use std::collections::{HashMap, HashSet};
 
 const CONTRACT_NAME: &str = "quasar:babylon-vault";
@@ -66,6 +68,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> V
             unregister_destination(deps, info, destination)
         }
         ExecuteMsg::SetOracle { oracle } => set_oracle(deps, info, oracle),
+        ExecuteMsg::Rebalance {} => rebalance(deps, env, info),
         ExecuteMsg::Deposit {} => deposit(deps, env, info),
         ExecuteMsg::Withdraw { amount } => withdraw(deps, env, info, amount),
         _ => Ok(Response::default()),
@@ -149,43 +152,55 @@ fn get_prices(deps: &Deps, denoms: &[String]) -> VaultResult<HashMap<String, Dec
 }
 
 fn get_balances(deps: &Deps, address: String, denoms: &[String]) -> StdResult<Vec<Coin>> {
-    denoms
+    let contract_balances: StdResult<Vec<Coin>> = denoms
         .iter()
         .map(|denom| -> StdResult<Coin> {
             deps.querier.query_balance(address.clone(), denom.clone())
         })
-        .collect()
+        .collect();
+    let contract_balances = contract_balances?;
+    let adaptor_balances = get_all_adaptor_balances(deps)?;
+    Ok(merge_coins(contract_balances, adaptor_balances))
 }
 
-pub fn get_destination_balance(deps: Deps, destination: String) -> StdResult<Vec<Coin>> {
-    let addr = DESTINATIONS.load(deps.storage, destination)?;
-
+fn get_destination_balance(deps: &Deps, destination: Addr) -> StdResult<Vec<Coin>> {
     let balance_query = EcosystemAdaptorMsg::QueryMsg::BalanceQuery {};
 
     let balance_response: EcosystemAdaptorMsg::BalanceResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: addr.to_string(),
+            contract_addr: destination.to_string(),
             msg: to_json_binary(&balance_query)?,
         }))?;
 
     Ok(balance_response.balance)
 }
 
-pub fn get_all_adaptor_balances(deps: Deps) -> StdResult<Vec<Coin>> {
+fn add_coin(coin: Coin, coins: Vec<Coin>) -> Vec<Coin> {
+    let mut coins = coins;
+    if let Some(existing_coin) = coins.iter_mut().find(|c| c.denom == coin.denom) {
+        existing_coin.amount += coin.amount;
+    } else {
+        coins.push(coin);
+    }
+    coins
+}
+
+fn merge_coins(coins: Vec<Coin>, other_coins: Vec<Coin>) -> Vec<Coin> {
+    let mut coins = coins;
+    for coin in other_coins {
+        coins = add_coin(coin, coins);
+    }
+    coins
+}
+
+fn get_all_adaptor_balances(deps: &Deps) -> StdResult<Vec<Coin>> {
     let mut total_balances: Vec<Coin> = vec![];
 
     for result in DESTINATIONS.range(deps.storage, None, None, cosmwasm_std::Order::Ascending) {
         let (_key, addr) = result?;
 
-        let balance = get_destination_balance(deps, addr.to_string())?;
-
-        for coin in balance {
-            if let Some(existing_coin) = total_balances.iter_mut().find(|c| c.denom == coin.denom) {
-                existing_coin.amount += coin.amount;
-            } else {
-                total_balances.push(coin);
-            }
-        }
+        let balance = get_destination_balance(deps, addr)?;
+        total_balances = merge_coins(total_balances, balance);
     }
 
     Ok(total_balances)
@@ -282,6 +297,95 @@ fn withdraw(deps: DepsMut, env: Env, info: MessageInfo, amount: Uint128) -> Vaul
         .add_message(send_msg)
         .add_attribute("action", "withdraw")
         .add_attribute("amount", amount))
+}
+
+pub fn get_deposit_msg(adaptor: Addr, funds: Vec<Coin>) -> VaultResult<CosmosMsg> {
+    Ok(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: adaptor.to_string(),
+        msg: to_json_binary(&EcosystemAdaptorMsg::ExecuteMsg::Deposit {})?,
+        funds,
+    }))
+}
+
+pub fn get_withdraw_msg(adaptor: Addr, amounts: Vec<Coin>) -> VaultResult<CosmosMsg> {
+    Ok(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: adaptor.to_string(),
+        msg: to_json_binary(&EcosystemAdaptorMsg::ExecuteMsg::Withdraw { amounts })?,
+        funds: vec![],
+    }))
+}
+
+struct Allocation {
+    destination: String,
+    amount: Uint128,
+}
+
+fn get_absolute_allocations(
+    deps: &Deps,
+    contract_addr: Addr,
+    prices: &HashMap<String, Decimal>,
+    lst_denoms: &[String],
+) -> VaultResult<Vec<Allocation>> {
+    let gauge = GAUGE.load(deps.storage)?;
+    let desired_allocations: GetAllocationsResponse = deps
+        .querier
+        .query_wasm_smart(gauge, &GaugeQueryMsg::<Empty>::GetAllocations {})?;
+    let balances = get_balances(deps, contract_addr.to_string(), lst_denoms)?;
+    let total_value = vault_value(&balances, prices)?;
+    // per ecosystem for now (assuming one LST only)
+    // needs to be extended to support multiple LSTs
+    let desired_absolute_allocations: Result<Vec<_>, _> = desired_allocations
+        .allocations
+        .into_iter()
+        .map(
+            |alloc| -> Result<Allocation, CheckedMultiplyFractionError> {
+                Ok(Allocation {
+                    destination: alloc.destination_id,
+                    amount: total_value.checked_mul_floor(alloc.amount)?,
+                })
+            },
+        )
+        .collect();
+    let desired_absolute_allocations = desired_absolute_allocations?;
+    Ok(desired_absolute_allocations)
+}
+
+fn rebalance(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
+    OWNER.assert_owner(deps.storage, &info.sender)?;
+
+    let lst_denoms = get_lst_denoms(deps.storage)?;
+    let prices = get_prices(&deps.as_ref(), &lst_denoms)?;
+    let desired_absolute_allocations =
+        get_absolute_allocations(&deps.as_ref(), env.contract.address, &prices, &lst_denoms)?;
+
+    let mut response = Response::default();
+    for Allocation {
+        destination,
+        amount,
+    } in desired_absolute_allocations.into_iter()
+    {
+        let adaptor = DESTINATIONS.load(deps.storage, destination)?;
+        let current = get_destination_balance(&deps.as_ref(), adaptor.clone())?;
+        let desired: Result<Vec<_>, _> = lst_denoms
+            .iter()
+            .map(|denom| -> Result<Coin, CheckedMultiplyFractionError> {
+                Ok(Coin {
+                    denom: denom.clone(),
+                    amount: amount.checked_div_floor(*prices.get(denom).unwrap())?,
+                })
+            })
+            .collect();
+        let desired = desired?;
+        let changes = compute_changes(&current, &desired);
+        if !changes.add.is_empty() {
+            response = response.add_messages(get_deposit_msg(adaptor.clone(), changes.add));
+        }
+        if !changes.remove.is_empty() {
+            response = response.add_messages(get_withdraw_msg(adaptor, changes.remove));
+        }
+    }
+
+    Ok(response)
 }
 
 fn get_destinations(storage: &dyn Storage) -> VaultResult<Vec<DestinationInfo>> {

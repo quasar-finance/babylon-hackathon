@@ -36,6 +36,7 @@ pub enum ExecuteMsg {
         oracle: String,
     },
     UpdateOwner(OwnerUpdate),
+    Rebalance {},
 }
 
 #[cw_serde]
