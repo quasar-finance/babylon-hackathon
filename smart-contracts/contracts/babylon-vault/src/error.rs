@@ -1,4 +1,4 @@
-use crate::state::{LSTS, VAULT_DENOM};
+use crate::state::LSTS;
 use cosmwasm_std::{CheckedMultiplyFractionError, Coin, OverflowError, StdError, Storage};
 use cw20_base::ContractError as Cw20Error;
 use mars_owner::OwnerError;
@@ -29,10 +29,21 @@ pub enum VaultError {
 
     #[error("{0}")]
     Cw20(#[from] Cw20Error),
+
+    #[error("This message does no accept funds")]
+    NonPayable {},
 }
 
 fn assert_non_empty_funds(funds: &[Coin]) -> Result<(), VaultError> {
     if funds.len() != 1 {
+        return Err(VaultError::InvalidFunds {});
+    }
+
+    Ok(())
+}
+
+fn assert_empty_funds(funds: &[Coin]) -> Result<(), VaultError> {
+    if funds.is_empty() {
         return Err(VaultError::InvalidFunds {});
     }
 
@@ -52,15 +63,7 @@ pub fn assert_deposit_funds(storage: &dyn Storage, funds: &[Coin]) -> Result<(),
     Ok(())
 }
 
-pub fn assert_withdraw_funds(storage: &dyn Storage, funds: &[Coin]) -> Result<(), VaultError> {
-    assert_non_empty_funds(funds)?;
-
-    let vault_denom = VAULT_DENOM.load(storage)?;
-    if vault_denom != funds[0].denom {
-        return Err(VaultError::DenomNotFound {
-            denom: funds[0].denom.clone(),
-        });
-    }
-
+pub fn assert_withdraw_funds(_storage: &dyn Storage, funds: &[Coin]) -> Result<(), VaultError> {
+    assert_empty_funds(funds)?;
     Ok(())
 }

@@ -1,18 +1,13 @@
-use crate::tests::setup::{OWNER, SUBDENOM, USER, VAULT_DENOM};
+use crate::tests::setup::{OWNER, SUBDENOM, USER};
 use crate::{
-    contract::{instantiate, query, reply},
+    contract::{instantiate, query},
     msg::{InstantiateMsg, QueryMsg},
 };
 use cosmwasm_std::{
     from_json,
     testing::{mock_dependencies, mock_env, mock_info},
-    Reply, SubMsgResponse, SubMsgResult,
 };
 use cw20::TokenInfoResponse;
-use prost::Message;
-use quasar_std::quasarlabs::quasarnode::tokenfactory::v1beta1::{
-    MsgCreateDenom, MsgCreateDenomResponse,
-};
 
 #[test]
 fn test_instantiate() {
@@ -32,7 +27,7 @@ fn test_instantiate() {
         },
     );
     assert!(result.is_ok());
-    let response = result.unwrap();
+    let _response = result.unwrap();
 
     let token_info =
         from_json::<TokenInfoResponse>(&query(deps.as_ref(), env, QueryMsg::TokenInfo {}).unwrap())

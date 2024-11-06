@@ -4,17 +4,12 @@ use crate::state::{DESTINATIONS, GAUGE, LSTS, ORACLE, OWNER};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, BankMsg, BankQuery, Binary, Coin, CustomQuery, Decimal, Deps, DepsMut, Env,
-    MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult, Storage, SubMsg,
-    SupplyResponse, Uint128,
+    to_json_binary, BankMsg, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo, Order,
+    Response, StdError, StdResult, Storage, Uint128,
 };
 use cw2::set_contract_version;
-use cw20_base::contract::{
-    execute_burn, execute_mint, execute_send, execute_transfer, instantiate as cw20_instantiate,
-    query_balance, query_token_info,
-};
+use cw20_base::contract::{execute_burn, execute_mint, query_balance, query_token_info};
 use cw20_base::enumerable::query_all_accounts;
-use cw20_base::msg::InstantiateMsg as Cw20InstantiateMsg;
 use cw20_base::state::{MinterData, TokenInfo, TOKEN_INFO};
 use std::collections::{HashMap, HashSet};
 
@@ -55,11 +50,6 @@ pub fn instantiate(
     TOKEN_INFO.save(deps.storage, &data)?;
 
     Ok(Response::new().add_attribute("vault_token", env.contract.address.to_string()))
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> VaultResult {
-    unimplemented!()
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -205,7 +195,16 @@ fn deposit(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
         ))?
     };
 
-     execute_mint(deps, env.clone(), MessageInfo { sender: env.contract.address, funds: vec![] }, info.sender.to_string(), new_shares)?;
+    execute_mint(
+        deps,
+        env.clone(),
+        MessageInfo {
+            sender: env.contract.address,
+            funds: vec![],
+        },
+        info.sender.to_string(),
+        new_shares,
+    )?;
 
     Ok(Response::new()
         .add_attribute("action", "deposit")
@@ -213,6 +212,12 @@ fn deposit(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
 }
 
 fn withdraw(deps: DepsMut, env: Env, info: MessageInfo, amount: Uint128) -> VaultResult {
+    assert_withdraw_funds(deps.storage, &info.funds)?;
+
+    if amount > query_balance(deps.as_ref(), info.sender.to_string())?.balance || amount.is_zero() {
+        return Err(VaultError::InvalidFunds {});
+    }
+
     let token_info = query_token_info(deps.as_ref())?;
     let existing_shares = token_info.total_supply;
     let lst_denoms = get_lst_denoms(deps.storage)?;
@@ -267,7 +272,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> VaultResult<Binary> {
         QueryMsg::Destinations {} => Ok(to_json_binary(&get_destinations(deps.storage)?)?),
         QueryMsg::Balance { address } => Ok(to_json_binary(&query_balance(deps, address)?)?),
         QueryMsg::TokenInfo {} => Ok(to_json_binary(&query_token_info(deps)?)?),
-        QueryMsg::AllAccounts { start_after, limit } => todo!(),
+        QueryMsg::AllAccounts { start_after, limit } => Ok(to_json_binary(&query_all_accounts(
+            deps,
+            start_after,
+            limit,
+        )?)?),
     }
 }
 
