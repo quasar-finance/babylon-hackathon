@@ -4,6 +4,8 @@ use cw_storage_plus::{Item, Map};
 
 use mars_owner::Owner;
 
+use crate::contract::GaugeResult;
+
 pub const OWNER: Owner = Owner::new("owner");
 
 // Destinations should function as a set, but we currently don't need to save data, hence and Empty value
@@ -35,12 +37,21 @@ impl<'a> Weights<'a> {
         }
     }
 
-    pub fn add(
-        &self,
-        store: &mut dyn Storage,
-        weight: Weight,
-    ) -> Result<(), cosmwasm_std::StdError> {
-        self.weights.save(store, &weight.destination_id, &weight)
+    pub fn add(&self, store: &mut dyn Storage, weight: Weight) -> GaugeResult<()> {
+        let old_dest_weight = self
+            .weights
+            .may_load(store, &weight.destination_id)?
+            .unwrap_or(Weight {
+                destination_id: weight.destination_id.clone(),
+                amount: Uint128::default(),
+            });
+        self.weights.save(store, &weight.destination_id, &weight)?;
+
+        let old = self.total_weight.may_load(store)?.unwrap_or_default();
+        self.total_weight
+            .save(store, &(old + weight.amount - old_dest_weight.amount))?;
+
+        Ok(())
     }
 
     pub fn get(&self, store: &dyn Storage, destination_id: &str) -> Result<Weight, StdError> {
