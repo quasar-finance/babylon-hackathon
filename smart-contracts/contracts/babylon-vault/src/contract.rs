@@ -205,7 +205,7 @@ fn deposit(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
         ))?
     };
 
-    execute_mint(deps, env, info.clone(), info.sender.to_string(), new_shares)?;
+     execute_mint(deps, env.clone(), MessageInfo { sender: env.contract.address, funds: vec![] }, info.sender.to_string(), new_shares)?;
 
     Ok(Response::new()
         .add_attribute("action", "deposit")

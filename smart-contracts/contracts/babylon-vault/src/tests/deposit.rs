@@ -1,8 +1,7 @@
 use cosmwasm_std::{
-    coin, coins,
-    testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR},
-    Decimal,
+    coin, coins, testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR}, Decimal, MessageInfo, Uint128
 };
+use cw20_base::contract::{execute_mint, query_balance};
 use quasar_std::quasarlabs::quasarnode::tokenfactory::v1beta1::MsgMint;
 
 use crate::{
@@ -76,27 +75,17 @@ fn first_successful_deposit_mints_fund_tokens_according_to_first_provided_asset(
 
     let deposit_amount = 1;
     let info = mock_info(USER, &[coin(deposit_amount, DEPOSIT_DENOM.to_string())]);
-    let response = execute(
+    let _response = execute(
         deps.as_mut(),
         env.clone(),
         info.clone(),
         ExecuteMsg::Deposit {},
     )
     .unwrap();
-    assert_eq!(response.messages.len(), 1);
 
-    assert_eq!(
-        response.messages[0].msg,
-        MsgMint {
-            sender: env.contract.address.to_string(),
-            amount: Some(cosmos_sdk_proto::cosmos::base::v1beta1::Coin {
-                amount: deposit_amount.to_string(),
-                denom: VAULT_DENOM.to_string(),
-            }),
-            mint_to_address: USER.to_string(),
-        }
-        .into()
-    );
+    let balance = query_balance(deps.as_ref(), USER.to_string()).unwrap();
+    // the first deposit mints shares 1:1 
+    assert_eq!(balance.balance, Uint128::new(deposit_amount));
 }
 
 #[test]
@@ -106,7 +95,6 @@ fn second_successful_deposit_mints_fund_tokens_according_to_share_of_assets() {
     let new_deposit = 2500;
 
     let mut deps = setup_with_balances(&[
-        ("some_wallet", &[coin(fund_shares.into(), VAULT_DENOM)]),
         (
             MOCK_CONTRACT_ADDR,
             &[
@@ -115,13 +103,27 @@ fn second_successful_deposit_mints_fund_tokens_according_to_share_of_assets() {
             ],
         ),
     ]);
+
+    // Mint the initial cw20 shares
+    let env = mock_env();
+    let info = MessageInfo {
+        sender: env.contract.address.clone(),
+        funds: vec![],
+    };
+    execute_mint(
+        deps.as_mut(),
+        env.clone(),
+        info,
+        "some_wallet".to_string(),
+        Uint128::from(fund_shares),
+    )
+    .unwrap();
+
     deps.querier.update_wasm(mock_wasm_querier(
         "oracle".to_string(),
         Decimal::percent(123),
         Decimal::percent(246),
     ));
-
-    let env = mock_env();
 
     let info = mock_info(OWNER, &[]);
     assert!(execute(
@@ -151,19 +153,9 @@ fn second_successful_deposit_mints_fund_tokens_according_to_share_of_assets() {
         ExecuteMsg::Deposit {},
     )
     .unwrap();
-    assert_eq!(response.messages.len(), 1);
 
     let expected_minted_tokens = 25000;
-    assert_eq!(
-        response.messages[0].msg,
-        MsgMint {
-            sender: env.contract.address.to_string(),
-            amount: Some(cosmos_sdk_proto::cosmos::base::v1beta1::Coin {
-                amount: expected_minted_tokens.to_string(),
-                denom: VAULT_DENOM.to_string(),
-            }),
-            mint_to_address: USER.to_string(),
-        }
-        .into()
-    );
+    let balance = query_balance(deps.as_ref(), USER.to_string()).unwrap();
+    // the first deposit mints shares 1:1 
+    assert_eq!(balance.balance, Uint128::new(expected_minted_tokens));
 }
