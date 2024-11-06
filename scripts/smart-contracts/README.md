@@ -14,8 +14,12 @@ To setup local env vars
 source env_euphrates.sh
 ```
 
-store.sh stores codes. The argument needs to be the wasm file located in smart-contracts/artifacts 
+store.sh stores codes. The argument needs to be the wasm file located in smart-contracts/artifacts
 ```
 bash store.sh babylon_vault.wasm
 ```
 
+instantiate.sh instantiates contracts. Refer to the contract by name of the wasm file. the .wasm can be added or not added. The callers needs to set the json of the corresponding contract correctly
+```
+bash scripts/smart-contracts/instantiate.sh mock_gauge '{"owner":"bbn1knv468atwzjk4v0d22jwa497v0sd0zez3lh7g3","destinations":["bbn1knv468atwzjk4v0d22jwa497v0sd0zez3lh7g3"]}'
+```

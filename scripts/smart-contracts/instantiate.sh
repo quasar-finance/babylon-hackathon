@@ -12,12 +12,13 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 source ${REPO_ROOT}/scripts/smart-contracts/env_euphrates.sh
 
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <filename>"
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 <filename> <init_json>"
     exit 1
 fi
 
 INPUT=$1
+INIT_JSON=$2
 
 get_code_id() {
     local filename=$1
@@ -36,7 +37,7 @@ CODE_ID=$(get_code_id "$INPUT")
 echo "Using Code ID: $CODE_ID"
 
 
-res=$(babylond tx wasm instantiate $CODE_ID '{"owner":"bbn1knv468atwzjk4v0d22jwa497v0sd0zez3lh7g3","destinations":["bbn1knv468atwzjk4v0d22jwa497v0sd0zez3lh7g3"]}' $keyringBackend --from=$userKey --admin=$address --label="test-label" --gas=auto --gas-prices 0.01u$feeToken --gas-adjustment=1.3 --chain-id=$chainId -b=sync -y --log_format=json -o "json" --node $nodeUrl)
+res=$(babylond tx wasm instantiate $CODE_ID "$INIT_JSON" $keyringBackend --from=$userKey --admin=$address --label="test-label" --gas=auto --gas-prices 0.01u$feeToken --gas-adjustment=1.3 --chain-id=$chainId -b=sync -y --log_format=json -o "json" --node $nodeUrl)
 txhash=$(echo "$res" | jq -r '.txhash')
 echo "Transaction hash: $txhash"
 sleep 45
