@@ -18,3 +18,4 @@ store.sh stores codes. The argument needs to be the wasm file located in smart-c
 ```
 bash store.sh babylon_vault.wasm
 ```
+

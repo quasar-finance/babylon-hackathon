@@ -23,8 +23,14 @@ source ${REPO_ROOT}/scripts/smart-contracts/env_euphrates.sh
 
 cd ${REPO_ROOT}/smart-contracts/artifacts
 
-echo "Storing $(basename "$artifact")..."
-res=$(babylond tx wasm store "$artifact" $keyringBackend --from $userKey --chain-id $chainId --gas 50000000 --gas-prices 0.01u$feeToken --node $nodeUrl -y -b sync -o "json")
+# Ensure artifact has .wasm extension for storage
+artifact_path="$artifact"
+if [[ ! "$artifact" =~ \.wasm$ ]]; then
+    artifact_path="${artifact}.wasm"
+fi
+
+echo "Storing $(basename "$artifact_path")..."
+res=$(babylond tx wasm store "$artifact_path" $keyringBackend --from $userKey --chain-id $chainId --gas 50000000 --gas-prices 0.01u$feeToken --node $nodeUrl -y -b sync -o "json")
 txhash=$(echo "$res" | jq -r '.txhash')
 echo "Transaction hash: $txhash"
 sleep 45
@@ -38,6 +44,7 @@ if [ ! -f "$json_file" ]; then
 fi
 
 # Set the code id in the json file
-filename=$(basename "$artifact" .wasm)
+filename=$(basename "$artifact")
+filename="${filename%.wasm}"  # Remove .wasm extension if it exists
 jq --arg name "$filename" --arg id "$code_id" \
     '. + {($name): $id}' "$json_file" > "$json_file.tmp" && mv "$json_file.tmp" "$json_file"
