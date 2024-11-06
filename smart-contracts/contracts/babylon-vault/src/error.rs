@@ -40,7 +40,7 @@ fn assert_non_empty_funds(funds: &[Coin]) -> Result<(), VaultError> {
 }
 
 fn assert_empty_funds(funds: &[Coin]) -> Result<(), VaultError> {
-    if funds.is_empty() {
+    if !funds.is_empty() {
         return Err(VaultError::InvalidFunds {});
     }
 
