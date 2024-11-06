@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Uint128;
+use cosmwasm_std::Coin;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -10,7 +10,7 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub struct EcosystemInfo {
-    pub deposit_denom: String,
+    pub deposit_denoms: Vec<String>,
     pub deposit_ecosystem: String,
     pub transfer_channel: String,
     pub connection: String,
@@ -26,20 +26,11 @@ pub struct PolytoneInfo {
 #[cw_serde]
 pub enum ExecuteMsg {
     Deposit {},
-    Withdraw { amount: Uint128 },
+    Withdraw { amounts: Vec<Coin> },
 }
 
 // DEMO CODE STARTS
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum QueryMsg {
-    #[returns(DepositDetails)]
-    GetDepositDetails {},
-}
-
-#[cw_serde]
-pub struct DepositDetails {
-    pub amount: Uint128,
-    pub denom: String,
-}
+pub enum QueryMsg {}
 // DEMO CODE ENDS

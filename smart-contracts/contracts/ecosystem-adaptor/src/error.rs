@@ -1,7 +1,7 @@
 use cosmwasm_std::{Coin, StdError, Storage};
 use thiserror::Error;
 
-use crate::state::DEPOSITS;
+use crate::state::ECOSYSTEM_INFO;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum AdaptorError {
@@ -19,24 +19,32 @@ pub enum AdaptorError {
 
     #[error("Insufficient funds for withdrawal")]
     InsufficientFunds {},
+
+    #[error("No queries supported")]
+    UnsupportedQuery {},
 }
 
 fn assert_non_empty_funds(funds: &[Coin]) -> Result<(), AdaptorError> {
-    if funds.len() != 1 {
+    if funds.len() == 0 {
         return Err(AdaptorError::InvalidFunds {});
     }
 
     Ok(())
 }
 
-pub fn assert_denom(storage: &dyn Storage, funds: &[Coin]) -> Result<(), AdaptorError> {
+pub fn assert_denoms(storage: &dyn Storage, funds: &[Coin]) -> Result<(), AdaptorError> {
     assert_non_empty_funds(funds)?;
 
-    let deposit_details = DEPOSITS.load(storage)?;
-    if deposit_details.denom != funds[0].denom {
-        return Err(AdaptorError::DenomNotFound {
-            denom: funds[0].denom.clone(),
-        });
+    // Load the array of accepted denoms
+    let deposit_denoms = ECOSYSTEM_INFO.load(storage)?.deposit_denoms;
+
+    // Check each denom in the funds array against the accepted denoms
+    for coin in funds {
+        if !deposit_denoms.contains(&coin.denom) {
+            return Err(AdaptorError::DenomNotFound {
+                denom: coin.denom.clone(),
+            });
+        }
     }
 
     Ok(())
