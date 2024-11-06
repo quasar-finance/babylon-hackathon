@@ -159,14 +159,11 @@ fn get_balances(deps: &Deps, address: String, denoms: &[String]) -> StdResult<Ve
         })
         .collect();
     let contract_balances = contract_balances?;
-    println!("get adaptor balances");
     let adaptor_balances = get_all_adaptor_balances(deps)?;
-    println!("merge");
     Ok(merge_coins(contract_balances, adaptor_balances))
 }
 
 fn get_destination_balance(deps: &Deps, destination: Addr) -> StdResult<Vec<Coin>> {
-    println!("load {}", destination);
     let balance_query = EcosystemAdaptorMsg::QueryMsg::BalanceQuery {};
 
     let balance_response: EcosystemAdaptorMsg::BalanceResponse =
@@ -200,7 +197,6 @@ fn get_all_adaptor_balances(deps: &Deps) -> StdResult<Vec<Coin>> {
     let mut total_balances: Vec<Coin> = vec![];
 
     for result in DESTINATIONS.range(deps.storage, None, None, cosmwasm_std::Order::Ascending) {
-        println!("here");
         let (_key, addr) = result?;
 
         let balance = get_destination_balance(deps, addr)?;
@@ -328,14 +324,12 @@ fn rebalance(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
         .query_wasm_smart(gauge, &GaugeQueryMsg::<Empty>::GetAllocations {})?;
     let lst_denoms = get_lst_denoms(deps.storage)?;
     let prices = get_prices(&deps.as_ref(), &lst_denoms)?;
-    println!("get balances");
     let balances = get_balances(
         &deps.as_ref(),
         env.contract.address.to_string(),
         &lst_denoms,
     )?;
     let total_value = vault_value(&balances, &prices)?;
-    println!("total value {}", total_value);
     // per ecosystem for now (assuming one LST only)
     // needs to be extended to support multiple LSTs
     let desired_absolute_allocations: Result<Vec<(String, Uint128)>, _> = desired_allocations
@@ -352,10 +346,8 @@ fn rebalance(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
         .collect();
     let desired_absolute_allocations = desired_absolute_allocations?;
 
-    println!("response");
     let mut response = Response::default();
     for (destination, value) in desired_absolute_allocations.into_iter() {
-        println!("Dest {} {}", destination, value);
         let adaptor = DESTINATIONS.load(deps.storage, destination)?;
         let current = get_destination_balance(&deps.as_ref(), adaptor.clone())?;
         let desired: Result<Vec<_>, _> = lst_denoms
