@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Timestamp, Uint128};
+use cosmwasm_std::{Addr, Timestamp, Uint128};
 use mars_owner::{OwnerResponse, OwnerUpdate};
 
 #[cw_serde]
@@ -16,9 +16,22 @@ pub enum ExecuteMsg {
     Withdraw {},
     Claim {},
     // owner methods
-    RegisterLst { denom: String },
-    UnregisterLst { denom: String },
-    SetOracle { oracle: String },
+    RegisterLst {
+        denom: String,
+    },
+    UnregisterLst {
+        denom: String,
+    },
+    RegisterDestination {
+        destination: String,
+        adaptor: String,
+    },
+    UnregisterDestination {
+        destination: String,
+    },
+    SetOracle {
+        oracle: String,
+    },
     UpdateOwner(OwnerUpdate),
 }
 
@@ -26,6 +39,12 @@ pub enum ExecuteMsg {
 pub struct Claim {
     pub amount: Uint128,
     pub expiration: Timestamp,
+}
+
+#[cw_serde]
+pub struct DestinationInfo {
+    pub destination: String,
+    pub adaptor: Addr,
 }
 
 #[cw_serde]
@@ -37,6 +56,8 @@ pub enum QueryMsg {
     Owner {},
     #[returns(Vec<String>)]
     Lsts {},
+    #[returns(Vec<DestinationInfo>)]
+    Destinations {},
     #[returns(String)]
     Denom {},
 }

@@ -20,6 +20,9 @@ pub enum VaultError {
     #[error("{denom} not found")]
     DenomNotFound { denom: String },
 
+    #[error("Destination {destination} not found")]
+    DestinationNotFound { destination: String },
+
     #[error("invalid funds")]
     InvalidFunds {},
 }
