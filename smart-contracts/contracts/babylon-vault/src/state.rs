@@ -4,6 +4,7 @@ use mars_owner::Owner;
 use std::collections::HashSet;
 
 pub const OWNER: Owner = Owner::new("owner");
+pub const GAUGE: Item<Addr> = Item::new("gauge");
 pub const LSTS: Item<HashSet<String>> = Item::new("lsts");
 pub const DESTINATIONS: Map<String, Addr> = Map::new("destination");
 pub const VAULT_DENOM: Item<String> = Item::new("denom");

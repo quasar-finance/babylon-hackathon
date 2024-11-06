@@ -36,6 +36,7 @@ fn basic_setup(
             owner: OWNER.to_string(),
             subdenom: SUBDENOM.to_string(),
             oracle: "oracle".to_string(),
+            gauge: "gauge".to_string(),
         },
     )
     .is_ok());

@@ -1,6 +1,6 @@
 use crate::error::{assert_deposit_funds, assert_withdraw_funds, VaultError};
 use crate::msg::{DestinationInfo, ExecuteMsg, InstantiateMsg, OracleQueryMsg, QueryMsg};
-use crate::state::{DESTINATIONS, LSTS, ORACLE, OWNER, VAULT_DENOM};
+use crate::state::{DESTINATIONS, GAUGE, LSTS, ORACLE, OWNER, VAULT_DENOM};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -35,6 +35,7 @@ pub fn instantiate(
     )?;
     ORACLE.save(deps.storage, &deps.api.addr_validate(&msg.oracle)?)?;
     LSTS.save(deps.storage, &HashSet::new())?;
+    GAUGE.save(deps.storage, &deps.api.addr_validate(&msg.gauge)?)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let msg = MsgCreateDenom {
         sender: env.contract.address.to_string(),
