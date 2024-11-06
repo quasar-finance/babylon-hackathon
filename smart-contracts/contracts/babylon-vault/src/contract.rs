@@ -1,25 +1,22 @@
 use crate::error::{assert_deposit_funds, assert_withdraw_funds, VaultError};
 use crate::msg::{DestinationInfo, ExecuteMsg, InstantiateMsg, OracleQueryMsg, QueryMsg};
-use crate::state::{DESTINATIONS, GAUGE, LSTS, ORACLE, OWNER, VAULT_DENOM};
+use crate::state::{DESTINATIONS, GAUGE, LSTS, ORACLE, OWNER};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, BankMsg, BankQuery, Binary, Coin, CustomQuery, Decimal, Deps, DepsMut, Env,
-    MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult, Storage, SubMsg,
-    SupplyResponse, Uint128,
+    to_json_binary, BankMsg, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo, Order,
+    Response, StdError, StdResult, Storage, Uint128,
 };
 use cw2::set_contract_version;
-use quasar_std::quasarlabs::quasarnode::tokenfactory::v1beta1::{
-    MsgBurn, MsgCreateDenom, MsgCreateDenomResponse, MsgMint,
-};
+use cw20_base::contract::{execute_burn, execute_mint, query_balance, query_token_info};
+use cw20_base::enumerable::query_all_accounts;
+use cw20_base::state::{MinterData, TokenInfo, TOKEN_INFO};
 use std::collections::{HashMap, HashSet};
 
 const CONTRACT_NAME: &str = "quasar:babylon-vault";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub type VaultResult<T = Response> = Result<T, VaultError>;
-
-pub(crate) const CREATE_DENOM_REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -37,24 +34,20 @@ pub fn instantiate(
     LSTS.save(deps.storage, &HashSet::new())?;
     GAUGE.save(deps.storage, &deps.api.addr_validate(&msg.gauge)?)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    let msg = MsgCreateDenom {
-        sender: env.contract.address.to_string(),
-        subdenom: msg.subdenom,
+
+    let data = TokenInfo {
+        name: msg.subdenom.clone(),
+        symbol: msg.subdenom,
+        decimals: 6,
+        total_supply: Uint128::zero(),
+        mint: Some(MinterData {
+            minter: env.contract.address.clone(),
+            cap: None,
+        }),
     };
-    Ok(Response::new().add_submessage(SubMsg::reply_on_success(msg, CREATE_DENOM_REPLY_ID)))
-}
+    TOKEN_INFO.save(deps.storage, &data)?;
 
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> VaultResult {
-    match reply.id {
-        CREATE_DENOM_REPLY_ID => {
-            let response: MsgCreateDenomResponse = reply.result.try_into()?;
-            VAULT_DENOM.save(deps.storage, &response.new_token_denom)?;
-
-            Ok(Response::new().add_attribute("vault_denom", response.new_token_denom))
-        }
-        _ => unimplemented!(),
-    }
+    Ok(Response::new().add_attribute("vault_token", env.contract.address.to_string()))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -72,7 +65,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> V
         }
         ExecuteMsg::SetOracle { oracle } => set_oracle(deps, info, oracle),
         ExecuteMsg::Deposit {} => deposit(deps, env, info),
-        ExecuteMsg::Withdraw {} => withdraw(deps, env, info),
+        ExecuteMsg::Withdraw { amount } => withdraw(deps, env, info, amount),
         _ => Ok(Response::default()),
     }
 }
@@ -131,13 +124,6 @@ fn set_oracle(deps: DepsMut, info: MessageInfo, oracle: String) -> VaultResult {
     Ok(Response::default())
 }
 
-fn get_supply<C: CustomQuery>(deps: &Deps<C>, denom: String) -> StdResult<Uint128> {
-    let response: SupplyResponse = deps
-        .querier
-        .query(&QueryRequest::<C>::Bank(BankQuery::Supply { denom }))?;
-    Ok(response.amount.amount)
-}
-
 fn get_lst_denoms(storage: &dyn Storage) -> StdResult<Vec<String>> {
     Ok(LSTS.load(storage)?.into_iter().collect())
 }
@@ -186,8 +172,8 @@ fn vault_value(balances: &[Coin], prices: &HashMap<String, Decimal>) -> VaultRes
 fn deposit(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
     assert_deposit_funds(deps.storage, &info.funds)?;
 
-    let vault_denom = VAULT_DENOM.load(deps.storage)?;
-    let existing_shares = get_supply(&deps.as_ref(), vault_denom.clone())?;
+    let token_info = query_token_info(deps.as_ref())?;
+    let existing_shares = token_info.total_supply;
 
     let contract_address = env.contract.address.to_string();
     let lst_denoms = get_lst_denoms(deps.storage)?;
@@ -207,25 +193,35 @@ fn deposit(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
         ))?
     };
 
-    Ok(Response::default().add_message(MsgMint {
-        sender: contract_address,
-        amount: Some(cosmos_sdk_proto::cosmos::base::v1beta1::Coin {
-            amount: new_shares.to_string(),
-            denom: vault_denom,
-        }),
-        mint_to_address: info.sender.to_string(),
-    }))
+    execute_mint(
+        deps,
+        env.clone(),
+        MessageInfo {
+            sender: env.contract.address,
+            funds: vec![],
+        },
+        info.sender.to_string(),
+        new_shares,
+    )?;
+
+    Ok(Response::new()
+        .add_attribute("action", "deposit")
+        .add_attribute("amount", new_shares))
 }
 
-fn withdraw(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
+fn withdraw(deps: DepsMut, env: Env, info: MessageInfo, amount: Uint128) -> VaultResult {
     assert_withdraw_funds(deps.storage, &info.funds)?;
 
-    let vault_denom = VAULT_DENOM.load(deps.storage)?;
-    let existing_shares = get_supply(&deps.as_ref(), vault_denom.clone())?;
+    if amount > query_balance(deps.as_ref(), info.sender.to_string())?.balance || amount.is_zero() {
+        return Err(VaultError::InvalidFunds {});
+    }
+
+    let token_info = query_token_info(deps.as_ref())?;
+    let existing_shares = token_info.total_supply;
     let lst_denoms = get_lst_denoms(deps.storage)?;
     let contract_address = env.contract.address.to_string();
     let balances = get_balances(&deps.as_ref(), contract_address.clone(), &lst_denoms)?;
-    let claim_ratio = Decimal::from_ratio(info.funds[0].amount, existing_shares);
+    let claim_ratio = Decimal::from_ratio(amount, existing_shares);
 
     let claim_funds: Result<Vec<_>, _> = balances
         .into_iter()
@@ -239,21 +235,17 @@ fn withdraw(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
     let mut claim_funds = claim_funds?;
     claim_funds.sort_by(|a, b| a.denom.cmp(&b.denom));
 
-    let burn_msg = MsgBurn {
-        sender: contract_address.clone(),
-        amount: Some(cosmos_sdk_proto::cosmos::base::v1beta1::Coin {
-            amount: info.funds[0].amount.to_string(),
-            denom: info.funds[0].denom.clone(),
-        }),
-        burn_from_address: contract_address.clone(),
-    };
+    execute_burn(deps, env, info.clone(), amount)?;
+
     let send_msg = BankMsg::Send {
         to_address: info.sender.to_string(),
         amount: claim_funds,
     };
-    Ok(Response::default()
-        .add_message(burn_msg)
-        .add_message(send_msg))
+
+    Ok(Response::new()
+        .add_message(send_msg)
+        .add_attribute("action", "withdraw")
+        .add_attribute("amount", amount))
 }
 
 fn get_destinations(storage: &dyn Storage) -> VaultResult<Vec<DestinationInfo>> {
@@ -272,11 +264,17 @@ fn get_destinations(storage: &dyn Storage) -> VaultResult<Vec<DestinationInfo>> 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> VaultResult<Binary> {
     match msg {
+        QueryMsg::Value {} => Ok(to_json_binary(&query_value(deps, env)?)?),
         QueryMsg::Owner {} => Ok(to_json_binary(&OWNER.query(deps.storage)?)?),
         QueryMsg::Lsts {} => Ok(to_json_binary(&get_lst_denoms(deps.storage)?)?),
         QueryMsg::Destinations {} => Ok(to_json_binary(&get_destinations(deps.storage)?)?),
-        QueryMsg::Denom {} => Ok(to_json_binary(&VAULT_DENOM.load(deps.storage)?)?),
-        QueryMsg::Value {} => Ok(to_json_binary(&query_value(deps, env)?)?),
+        QueryMsg::Balance { address } => Ok(to_json_binary(&query_balance(deps, address)?)?),
+        QueryMsg::TokenInfo {} => Ok(to_json_binary(&query_token_info(deps)?)?),
+        QueryMsg::AllAccounts { start_after, limit } => Ok(to_json_binary(&query_all_accounts(
+            deps,
+            start_after,
+            limit,
+        )?)?),
     }
 }
 
