@@ -1,5 +1,5 @@
 use cosmwasm_schema::write_api;
-use cw_cellar_adaptor::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use ecosystem_adaptor::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {
     write_api! {

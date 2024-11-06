@@ -1,7 +1,7 @@
 [package]
 authors = ["Quasar"]
 edition = "2021"
-name = "cw-cellar-adaptor"
+name = "ecosystem_adaptor"
 version = "0.0.1"
 readme = ""
 repository = "https://github.com/quasar-finance/quasar"
@@ -12,7 +12,7 @@ description = "A vault for babylon lsts"
 keywords = ["cosmwasm", "lst", "btc"]
 
 exclude = [
-  "cw-cellar-adaptor.wasm",
+  "ecosystem_adaptor.wasm",
   "hash.txt",
 ]
 
@@ -32,6 +32,7 @@ cw2 = { workspace = true }
 mars-owner = { workspace = true }
 quasar-std = { workspace = true }
 cosmos-sdk-proto = { workspace = true }
+polytone = { workspace = true }
 
 [dev-dependencies]
 prost = { workspace = true }
