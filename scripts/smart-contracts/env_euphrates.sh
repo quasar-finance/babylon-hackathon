@@ -1,6 +1,6 @@
 export binary="babylond"
 export chainId="euphrates-0.5.0"
-export homeDir="~/.babylond"
+export homeDir="$HOME/.babylond"
 
 export userKey="user"
 export keyringBackend="--keyring-backend=test"
