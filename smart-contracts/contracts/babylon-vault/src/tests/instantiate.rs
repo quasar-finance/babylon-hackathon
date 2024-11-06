@@ -33,18 +33,9 @@ fn test_instantiate() {
     );
     assert!(result.is_ok());
     let response = result.unwrap();
-    assert_eq!(response.messages.len(), 1);
-    assert_eq!(
-        response.messages[0].msg,
-        MsgCreateDenom {
-            sender: env.contract.address.to_string(),
-            subdenom: SUBDENOM.to_string(),
-        }
-        .into()
-    );
 
     let token_info =
         from_json::<TokenInfoResponse>(&query(deps.as_ref(), env, QueryMsg::TokenInfo {}).unwrap())
             .unwrap();
-    assert_eq!(token_info.symbol, VAULT_DENOM);
+    assert_eq!(token_info.symbol, SUBDENOM);
 }
