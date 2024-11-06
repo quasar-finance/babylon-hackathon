@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = ["contracts/*", "packages/*", "proto-build"]
+members = ["contracts/*", "packages/*"]
 
 [workspace.dependencies]
 cosmwasm-std = "1.5.4"
@@ -30,7 +30,4 @@ prettyplease = "0.1.16"
 heck = "0.4.0"
 log = "0.4.17"
 
-quasar = { path = "packages/quasar" }
-quasar-std = { path = "packages/quasar-std" }
-quasar-std-derive = { path = "packages/quasar-std-derive" }
 interfaces = { path = "packages/interfaces" }
