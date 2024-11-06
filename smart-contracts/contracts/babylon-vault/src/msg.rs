@@ -1,6 +1,8 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Timestamp, Uint128};
-use mars_owner::{OwnerResponse, OwnerUpdate};
+#[cfg(not(target_arch = "wasm32"))]
+use mars_owner::OwnerResponse;
+use mars_owner::OwnerUpdate;
 
 #[cw_serde]
 pub struct InstantiateMsg {
