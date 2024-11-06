@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InstantiateMsg",
+  "type": "object",
+  "required": [
+    "babylon_vault",
+    "ecosystem_info",
+    "polytone_info"
+  ],
+  "properties": {
+    "babylon_vault": {
+      "type": "string"
+    },
+    "ecosystem_info": {
+      "$ref": "#/definitions/EcosystemInfo"
+    },
+    "polytone_info": {
+      "$ref": "#/definitions/PolytoneInfo"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "EcosystemInfo": {
+      "type": "object",
+      "required": [
+        "connection",
+        "deposit_denoms",
+        "deposit_ecosystem",
+        "destination_chain_denom",
+        "return_source_channel",
+        "transfer_channel"
+      ],
+      "properties": {
+        "connection": {
+          "type": "string"
+        },
+        "deposit_denoms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deposit_ecosystem": {
+          "type": "string"
+        },
+        "destination_chain_denom": {
+          "type": "string"
+        },
+        "return_source_channel": {
+          "type": "string"
+        },
+        "transfer_channel": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PolytoneInfo": {
+      "type": "object",
+      "required": [
+        "polyton_note_contract"
+      ],
+      "properties": {
+        "polyton_note_contract": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
