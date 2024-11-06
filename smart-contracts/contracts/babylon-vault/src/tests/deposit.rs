@@ -88,7 +88,6 @@ fn first_successful_deposit_mints_fund_tokens_according_to_first_provided_asset(
     .unwrap();
 
     let balance = query_balance(deps.as_ref(), USER.to_string()).unwrap();
-    // the first deposit mints shares 1:1
     assert_eq!(balance.balance, Uint128::new(deposit_amount));
 }
 
@@ -106,7 +105,6 @@ fn second_successful_deposit_mints_fund_tokens_according_to_share_of_assets() {
         ],
     )]);
 
-    // Mint the initial cw20 shares
     let env = mock_env();
     mint_shares(
         deps.as_mut(),
@@ -152,6 +150,5 @@ fn second_successful_deposit_mints_fund_tokens_according_to_share_of_assets() {
 
     let expected_minted_tokens = 25000;
     let balance = query_balance(deps.as_ref(), USER.to_string()).unwrap();
-    // the first deposit mints shares 1:1
     assert_eq!(balance.balance, Uint128::new(expected_minted_tokens));
 }

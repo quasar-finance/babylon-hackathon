@@ -61,8 +61,6 @@ pub enum QueryMsg {
     Lsts {},
     #[returns(Vec<DestinationInfo>)]
     Destinations {},
-
-    // CW20 queries
     #[returns(cw20::BalanceResponse)]
     Balance { address: String },
     #[returns(cw20::TokenInfoResponse)]

@@ -18,7 +18,6 @@ use crate::{
     VaultError,
 };
 
-// TODO make this test assert no funds are sent
 #[test]
 fn withdraw_with_funds_fails() {
     let mut deps = setup();
@@ -185,7 +184,6 @@ fn test_withdrawal_with_two_registered_lsts() {
 
     let withdraw_amount = 10000;
     let info = mock_info(USER, &[]);
-    // we expect the users token to decrease by withdraw_amount
     let before_balance = query_balance(deps.as_ref(), USER.to_string()).unwrap();
 
     let response = execute(

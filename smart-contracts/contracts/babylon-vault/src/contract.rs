@@ -35,13 +35,11 @@ pub fn instantiate(
     GAUGE.save(deps.storage, &deps.api.addr_validate(&msg.gauge)?)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    // store token info using cw20-base format
     let data = TokenInfo {
         name: msg.subdenom.clone(),
         symbol: msg.subdenom,
         decimals: 6,
         total_supply: Uint128::zero(),
-        // set self as minter, so we can properly execute mint and burn
         mint: Some(MinterData {
             minter: env.contract.address.clone(),
             cap: None,
