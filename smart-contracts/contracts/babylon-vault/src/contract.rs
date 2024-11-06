@@ -315,39 +315,55 @@ pub fn get_withdraw_msg(adaptor: Addr, amounts: Vec<Coin>) -> VaultResult<Cosmos
     }))
 }
 
-fn rebalance(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
-    OWNER.assert_owner(deps.storage, &info.sender)?;
-    let gauge = GAUGE.load(deps.storage)?;
+struct Allocation {
+    destination: String,
+    amount: Uint128,
+}
 
+fn get_absolute_allocations(
+    deps: &Deps,
+    contract_addr: Addr,
+    prices: &HashMap<String, Decimal>,
+    lst_denoms: &[String],
+) -> VaultResult<Vec<Allocation>> {
+    let gauge = GAUGE.load(deps.storage)?;
     let desired_allocations: GetAllocationsResponse = deps
         .querier
         .query_wasm_smart(gauge, &GaugeQueryMsg::<Empty>::GetAllocations {})?;
-    let lst_denoms = get_lst_denoms(deps.storage)?;
-    let prices = get_prices(&deps.as_ref(), &lst_denoms)?;
-    let balances = get_balances(
-        &deps.as_ref(),
-        env.contract.address.to_string(),
-        &lst_denoms,
-    )?;
-    let total_value = vault_value(&balances, &prices)?;
+    let balances = get_balances(deps, contract_addr.to_string(), lst_denoms)?;
+    let total_value = vault_value(&balances, prices)?;
     // per ecosystem for now (assuming one LST only)
     // needs to be extended to support multiple LSTs
-    let desired_absolute_allocations: Result<Vec<(String, Uint128)>, _> = desired_allocations
+    let desired_absolute_allocations: Result<Vec<_>, _> = desired_allocations
         .allocations
         .into_iter()
         .map(
-            |alloc| -> Result<(String, Uint128), CheckedMultiplyFractionError> {
-                Ok((
-                    alloc.destination_id,
-                    total_value.checked_mul_floor(alloc.amount)?,
-                ))
+            |alloc| -> Result<Allocation, CheckedMultiplyFractionError> {
+                Ok(Allocation {
+                    destination: alloc.destination_id,
+                    amount: total_value.checked_mul_floor(alloc.amount)?,
+                })
             },
         )
         .collect();
     let desired_absolute_allocations = desired_absolute_allocations?;
+    Ok(desired_absolute_allocations)
+}
+
+fn rebalance(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
+    OWNER.assert_owner(deps.storage, &info.sender)?;
+
+    let lst_denoms = get_lst_denoms(deps.storage)?;
+    let prices = get_prices(&deps.as_ref(), &lst_denoms)?;
+    let desired_absolute_allocations =
+        get_absolute_allocations(&deps.as_ref(), env.contract.address, &prices, &lst_denoms)?;
 
     let mut response = Response::default();
-    for (destination, value) in desired_absolute_allocations.into_iter() {
+    for Allocation {
+        destination,
+        amount,
+    } in desired_absolute_allocations.into_iter()
+    {
         let adaptor = DESTINATIONS.load(deps.storage, destination)?;
         let current = get_destination_balance(&deps.as_ref(), adaptor.clone())?;
         let desired: Result<Vec<_>, _> = lst_denoms
@@ -355,7 +371,7 @@ fn rebalance(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
             .map(|denom| -> Result<Coin, CheckedMultiplyFractionError> {
                 Ok(Coin {
                     denom: denom.clone(),
-                    amount: value.checked_div_floor(*prices.get(denom).unwrap())?,
+                    amount: amount.checked_div_floor(*prices.get(denom).unwrap())?,
                 })
             })
             .collect();
