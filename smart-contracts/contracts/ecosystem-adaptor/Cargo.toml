@@ -31,7 +31,6 @@ thiserror = { workspace = true }
 cw2 = { workspace = true }
 quasar-std = { workspace = true }
 cosmos-sdk-proto = { workspace = true }
-polytone = { workspace = true }
 
 [dev-dependencies]
 prost = { workspace = true }
