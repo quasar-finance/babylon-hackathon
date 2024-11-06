@@ -7,6 +7,7 @@ pub struct InstantiateMsg {
     pub owner: String,
     pub subdenom: String,
     pub oracle: String,
+    pub gauge: String,
 }
 
 #[cw_serde]
