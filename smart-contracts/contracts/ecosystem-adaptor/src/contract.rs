@@ -1,8 +1,10 @@
 use crate::error::assert_denoms;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{BalanceResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{BABYLON_VAULT, ECOSYSTEM_INFO, POLYTONE_INFO};
 use crate::AdaptorError;
-use cosmwasm_std::{entry_point, BankMsg, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{
+    entry_point, to_json_binary, BankMsg, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response,
+};
 
 pub type AdaptorResult<T = Response> = Result<T, AdaptorError>;
 
@@ -98,6 +100,15 @@ fn withdraw(deps: DepsMut, info: MessageInfo, amounts: Vec<Coin>) -> AdaptorResu
 }
 
 #[entry_point]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> AdaptorResult<Binary> {
-    Err(AdaptorError::UnsupportedQuery {})
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> AdaptorResult<Binary> {
+    match msg {
+        QueryMsg::BalanceQuery {} => {
+            let contract_address = env.contract.address;
+
+            let balance = deps.querier.query_all_balances(&contract_address)?;
+
+            let response = BalanceResponse { balance };
+            Ok(to_json_binary(&response)?)
+        }
+    }
 }

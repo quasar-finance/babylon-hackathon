@@ -32,5 +32,13 @@ pub enum ExecuteMsg {
 // DEMO CODE STARTS
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum QueryMsg {}
+pub enum QueryMsg {
+    #[returns(BalanceResponse)]
+    BalanceQuery {},
+}
+
+#[cw_serde]
+pub struct BalanceResponse {
+    pub balance: Vec<Coin>,
+}
 // DEMO CODE ENDS
