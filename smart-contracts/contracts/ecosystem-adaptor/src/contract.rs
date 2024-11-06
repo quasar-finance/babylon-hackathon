@@ -1,6 +1,6 @@
 use crate::error::assert_denom;
 use crate::msg::{DepositDetails, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{CELLAR_INFO, DEPOSITS, MAIN_VAULT, POLYTONE_INFO};
+use crate::state::{ECOSYSTEM_INFO, DEPOSITS, MAIN_VAULT, POLYTONE_INFO};
 use crate::AdaptorError;
 use cosmwasm_std::{
     entry_point, to_json_binary, BankMsg, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response,
@@ -23,10 +23,10 @@ pub fn instantiate(
         deps.storage,
         &DepositDetails {
             amount: Uint128::zero(),
-            denom: msg.cellar_info.clone().deposit_denom,
+            denom: msg.ecosystem_info.clone().deposit_denom,
         },
     )?;
-    CELLAR_INFO.save(deps.storage, &msg.cellar_info.clone())?;
+    ECOSYSTEM_INFO.save(deps.storage, &msg.ecosystem_info.clone())?;
     POLYTONE_INFO.save(deps.storage, &msg.polytone_info)?;
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
@@ -34,42 +34,48 @@ pub fn instantiate(
 #[entry_point]
 pub fn execute(deps: DepsMut, _env: Env, info: MessageInfo, msg: ExecuteMsg) -> AdaptorResult {
     match msg {
-        ExecuteMsg::Deposit {} => deposit_funds(deps, info),
-        ExecuteMsg::Withdraw { amount } => withdraw_and_send_funds(deps, info, amount),
+        ExecuteMsg::Deposit {} => deposit(deps, info),
+        ExecuteMsg::Withdraw { amount } => withdraw(deps, info, amount),
     }
 }
 
-fn deposit_funds(deps: DepsMut, info: MessageInfo) -> AdaptorResult {
+fn deposit(deps: DepsMut, info: MessageInfo) -> AdaptorResult {
+    // perform sanity checks
     let main_vault = MAIN_VAULT.load(deps.storage)?;
     if info.sender != main_vault {
         return Err(AdaptorError::Unauthorized {});
     }
 
-    if info.funds.len() == 0 {
-        return Err(AdaptorError::InsufficientFunds {});
-    }
-
-    // check for denom
     assert_denom(deps.storage, &info.funds)?;
 
+    // Actual steps
+    // step 1 : perfrom ibc send funds to other chain
+    // step 2 : perfrom ica deposit into vaults on the other chain
+    // step 3 : perform action on ica ack to make sure that the deposit went through
+
+    // DEMO CODE STARTS
     let mut deposit_details = DEPOSITS.load(deps.storage)?;
     deposit_details.amount += info.funds[0].amount;
     DEPOSITS.save(deps.storage, &deposit_details)?;
-
-    // perfrom ica steps here while depositing into another protocol
-    // and wait for reply to make sure that the deposit went through
-    // let deposit = get_polytone_execute_msg_binary();
+    // DEMO CODE ENDS
 
     Ok(Response::new().add_attribute("method", "deposit_funds"))
 }
 
-fn withdraw_and_send_funds(deps: DepsMut, info: MessageInfo, amount: Uint128) -> AdaptorResult {
+fn withdraw(deps: DepsMut, info: MessageInfo, amount: Uint128) -> AdaptorResult {
+    // perform sanity checks
     let main_vault = MAIN_VAULT.load(deps.storage)?;
-
     if info.sender != main_vault {
         return Err(AdaptorError::Unauthorized {});
     }
 
+    // Actual steps
+    // step 1 : icq to check if adaptor hold desired shares on other chain vault
+    // step 2 : ica withdraw on the other chain
+    // step 3 : get ica ack and trigger ibc funds back to adaptor
+    // step 4 : bank send funds to babylon vault
+
+    // DEMO CODE STARTS
     let mut deposit_details = DEPOSITS.load(deps.storage)?;
 
     if deposit_details.amount < amount {
@@ -79,11 +85,6 @@ fn withdraw_and_send_funds(deps: DepsMut, info: MessageInfo, amount: Uint128) ->
     deposit_details.amount -= amount;
     DEPOSITS.save(deps.storage, &deposit_details)?;
 
-    // do ica withdraw and then use ack from it to trigger IBCing funds back to adaptor
-    // todo : do_ica_withdraw_from_vault()
-    // then use replies to send back funds on a successful return of funds
-    // todo : do_ibc_back_funds()
-
     let send_msg = BankMsg::Send {
         to_address: main_vault.to_string(),
         amount: vec![Coin {
@@ -91,10 +92,11 @@ fn withdraw_and_send_funds(deps: DepsMut, info: MessageInfo, amount: Uint128) ->
             amount,
         }],
     };
+    // DEMO CODE ENDS
 
     Ok(Response::new()
         .add_message(send_msg)
-        .add_attribute("method", "withdraw_and_send_funds"))
+        .add_attribute("withdraw", amount.to_string()))
 }
 
 #[entry_point]

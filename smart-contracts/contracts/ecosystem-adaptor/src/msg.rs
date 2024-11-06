@@ -4,20 +4,14 @@ use cosmwasm_std::Uint128;
 #[cw_serde]
 pub struct InstantiateMsg {
     pub babylon_vault: String, // Address of the babylon vault
-    pub cellar_info: CellarInfo,
+    pub ecosystem_info: EcosystemInfo,
     pub polytone_info: PolytoneInfo,
 }
 
 #[cw_serde]
-pub struct DepositDetails {
-    pub amount: Uint128,
-    pub denom: String,
-}
-
-#[cw_serde]
-pub struct CellarInfo {
+pub struct EcosystemInfo {
     pub deposit_denom: String,
-    pub deposit_cellar: String,
+    pub deposit_ecosystem: String,
     pub transfer_channel: String,
     pub connection: String,
     pub return_source_channel: String,
@@ -35,9 +29,17 @@ pub enum ExecuteMsg {
     Withdraw { amount: Uint128 },
 }
 
+// DEMO CODE STARTS
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(DepositDetails)]
     GetDepositDetails {},
 }
+
+#[cw_serde]
+pub struct DepositDetails {
+    pub amount: Uint128,
+    pub denom: String,
+}
+// DEMO CODE ENDS
