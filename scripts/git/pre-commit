@@ -17,7 +17,7 @@ fi
 update_schemas() {
   local workspace=$1
   local contract=$2
-  if [[ $CHANGES == *${workspace}/contracts/${contract}/* ]]
+  if [[ $CHANGES == *smart-contracts/${workspace}/contracts/${contract}/* ]]
   then
     echo "Changes in ${contract} contract"
     cd ${REPO_ROOT}/smart-contracts/${workspace}/contracts/${contract}
@@ -36,7 +36,7 @@ update_schemas() {
 
 fix_formatting() {
   local target=$1
-  if [[ $CHANGES == *${target}* ]]
+  if [[ $CHANGES == *smart-contracts/${target}* ]]
   then
     echo "Changes in ${target}"
     cd ${REPO_ROOT}/smart-contracts/${target}
@@ -51,40 +51,35 @@ fix_formatting() {
 
 check_lint() {
   local target=$1
-  if [[ $CHANGES == *${target}* ]]
+  if [[ $CHANGES == *smart-contracts/${target}* ]]
   then
     echo "Changes in ${target}"
     cd ${REPO_ROOT}/smart-contracts/${target}
-    cargo clippy --all-targets -- -D warnings -Aclippy::doc_lazy_continuation
+    cargo clippy --all-targets -- -D warnings -A clippy::doc_lazy_continuation
     cd -
   fi
 }
 
-update_schemas osmosis lst-dex-adapter-osmosis
-update_schemas osmosis lst-adapter-osmosis
-update_schemas osmosis dex-router-osmosis
-update_schemas osmosis token-burner
-update_schemas osmosis cl-vault
-update_schemas osmosis merkle-incentives
-update_schemas osmosis range-middleware
-update_schemas quasar babylon-vault
-fix_formatting osmosis/contracts/lst-dex-adapter-osmosis
-fix_formatting osmosis/contracts/lst-adapter-osmosis
-fix_formatting osmosis/contracts/dex-router-osmosis
-fix_formatting osmosis/contracts/token-burner
-fix_formatting osmosis/contracts/cl-vault
-fix_formatting osmosis/contracts/merkle-incentives
-fix_formatting osmosis/contracts/range-middleware
-fix_formatting osmosis/packages/quasar-types
-fix_formatting quasar/proto-build
-fix_formatting quasar/contracts/babylon-vault
-check_lint osmosis/contracts/lst-dex-adapter-osmosis
-check_lint osmosis/contracts/lst-adapter-osmosis
-check_lint osmosis/contracts/dex-router-osmosis
-check_lint osmosis/contracts/token-burner
-check_lint osmosis/contracts/cl-vault
-check_lint osmosis/contracts/merkle-incentives
-check_lint osmosis/contracts/range-middleware
-check_lint osmosis/packages/quasar-types
-check_lint quasar/proto-build
-check_lint quasar/contracts/babylon-vault
+update_schemas contracts babylon-vault
+fix_formatting contracts/babylon-vault
+check_lint contracts/babylon-vault
+
+update_schemas contracts dummy-oracle
+fix_formatting contracts/dummy-oracle
+check_lint contracts/dummy-oracle
+
+update_schemas contracts mock-gauge
+fix_formatting contracts/mock-gauge
+check_lint contracts/mock-gauge
+
+update_schemas packages interfaces
+fix_formatting packages/interfaces
+check_lint packages/interfaces
+
+update_schemas packages quasar-std
+fix_formatting packages/quasar-std
+check_lint packages/quasar-std
+
+update_schemas packages quasar-std-derive
+fix_formatting packages/quasar-std-derive
+check_lint packages/quasar-std-derive
