@@ -1,11 +1,11 @@
 use crate::error::{assert_deposit_funds, assert_withdraw_funds, VaultError};
-use crate::msg::{ExecuteMsg, InstantiateMsg, OracleQueryMsg, QueryMsg};
-use crate::state::{LSTS, ORACLE, OWNER, VAULT_DENOM};
+use crate::msg::{DestinationInfo, ExecuteMsg, InstantiateMsg, OracleQueryMsg, QueryMsg};
+use crate::state::{DESTINATIONS, LSTS, ORACLE, OWNER, VAULT_DENOM};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_json_binary, BankMsg, BankQuery, Binary, Coin, CustomQuery, Decimal, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, Reply, Response, StdError, StdResult, Storage, SubMsg,
+    MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult, Storage, SubMsg,
     SupplyResponse, Uint128,
 };
 use cw2::set_contract_version;
@@ -62,6 +62,13 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> V
         ExecuteMsg::UpdateOwner(update) => Ok(OWNER.update(deps, info, update)?),
         ExecuteMsg::RegisterLst { denom } => register_lst(deps, info, denom),
         ExecuteMsg::UnregisterLst { denom } => unregister_lst(deps, info, denom),
+        ExecuteMsg::RegisterDestination {
+            destination,
+            adaptor,
+        } => register_destination(deps, info, destination, adaptor),
+        ExecuteMsg::UnregisterDestination { destination } => {
+            unregister_destination(deps, info, destination)
+        }
         ExecuteMsg::SetOracle { oracle } => set_oracle(deps, info, oracle),
         ExecuteMsg::Deposit {} => deposit(deps, env, info),
         ExecuteMsg::Withdraw {} => withdraw(deps, env, info),
@@ -89,6 +96,31 @@ fn unregister_lst(deps: DepsMut, info: MessageInfo, denom: String) -> VaultResul
             Err(StdError::generic_err("Denom not found"))
         }
     })?;
+    Ok(Response::default())
+}
+
+fn register_destination(
+    deps: DepsMut,
+    info: MessageInfo,
+    destination: String,
+    adaptor: String,
+) -> VaultResult {
+    OWNER.assert_owner(deps.storage, &info.sender)?;
+    DESTINATIONS.save(
+        deps.storage,
+        destination,
+        &deps.api.addr_validate(&adaptor)?,
+    )?;
+    Ok(Response::default())
+}
+
+fn unregister_destination(deps: DepsMut, info: MessageInfo, destination: String) -> VaultResult {
+    OWNER.assert_owner(deps.storage, &info.sender)?;
+    if DESTINATIONS.has(deps.storage, destination.clone()) {
+        DESTINATIONS.remove(deps.storage, destination);
+    } else {
+        return Err(VaultError::DestinationNotFound { destination });
+    }
     Ok(Response::default())
 }
 
@@ -223,11 +255,25 @@ fn withdraw(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
         .add_message(send_msg))
 }
 
+fn get_destinations(storage: &dyn Storage) -> VaultResult<Vec<DestinationInfo>> {
+    let destinations: Result<Vec<_>, _> = DESTINATIONS
+        .range(storage, None, None, Order::Ascending)
+        .collect();
+    Ok(destinations?
+        .into_iter()
+        .map(|(destination, adaptor)| DestinationInfo {
+            destination,
+            adaptor,
+        })
+        .collect())
+}
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> VaultResult<Binary> {
     match msg {
         QueryMsg::Owner {} => Ok(to_json_binary(&OWNER.query(deps.storage)?)?),
         QueryMsg::Lsts {} => Ok(to_json_binary(&get_lst_denoms(deps.storage)?)?),
+        QueryMsg::Destinations {} => Ok(to_json_binary(&get_destinations(deps.storage)?)?),
         QueryMsg::Denom {} => Ok(to_json_binary(&VAULT_DENOM.load(deps.storage)?)?),
         QueryMsg::Value {} => Ok(to_json_binary(&query_value(deps, env)?)?),
     }
