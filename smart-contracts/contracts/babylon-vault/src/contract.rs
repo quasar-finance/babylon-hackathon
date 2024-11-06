@@ -4,16 +4,12 @@ use crate::state::{DESTINATIONS, GAUGE, LSTS, ORACLE, OWNER};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, BankMsg, BankQuery, Binary, Coin, CustomQuery, Decimal, Deps, DepsMut, Env,
-    MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult, Storage, SubMsg,
-    SupplyResponse, Uint128, WasmQuery,
+    to_json_binary, BankMsg, Binary, Coin, Decimal, Deps, DepsMut, Env,
+    MessageInfo, Order, QueryRequest, Response, StdError, StdResult, Storage,
+    Uint128, WasmQuery,
 };
 use cw2::set_contract_version;
 use ecosystem_adaptor::msg as EcosystemAdaptorMsg;
-use quasar_std::quasarlabs::quasarnode::tokenfactory::v1beta1::{
-    MsgBurn, MsgCreateDenom, MsgCreateDenomResponse, MsgMint,
-};
-use cw2::set_contract_version;
 use cw20_base::contract::{execute_burn, execute_mint, query_balance, query_token_info};
 use cw20_base::enumerable::query_all_accounts;
 use cw20_base::state::{MinterData, TokenInfo, TOKEN_INFO};

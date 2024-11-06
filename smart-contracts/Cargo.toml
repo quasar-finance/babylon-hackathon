@@ -34,3 +34,4 @@ quasar = { path = "packages/quasar" }
 quasar-std = { path = "packages/quasar-std" }
 quasar-std-derive = { path = "packages/quasar-std-derive" }
 interfaces = { path = "packages/interfaces" }
+ecosystem-adaptor = { path = "contracts/ecosystem-adaptor" }
