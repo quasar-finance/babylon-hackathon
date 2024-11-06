@@ -33,6 +33,9 @@ mars-owner = { workspace = true }
 quasar = { workspace = true }
 quasar-std = { workspace = true }
 cosmos-sdk-proto = { workspace = true }
+cw20-base = { workspace = true }
+cw20 = { workspace = true }
+
 
 # import ecosystem adaptor
 ecosystem-adaptor = {path = "../ecosystem-adaptor", features = ["library"], default-features = false}

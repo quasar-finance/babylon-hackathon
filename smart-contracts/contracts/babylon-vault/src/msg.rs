@@ -14,7 +14,9 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     // permission-less methods
     Deposit {},
-    Withdraw {},
+    Withdraw {
+        amount: Uint128,
+    },
     Claim {},
     // owner methods
     RegisterLst {
@@ -59,8 +61,15 @@ pub enum QueryMsg {
     Lsts {},
     #[returns(Vec<DestinationInfo>)]
     Destinations {},
-    #[returns(String)]
-    Denom {},
+    #[returns(cw20::BalanceResponse)]
+    Balance { address: String },
+    #[returns(cw20::TokenInfoResponse)]
+    TokenInfo {},
+    #[returns(cw20::AllAccountsResponse)]
+    AllAccounts {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
 }
 
 #[cw_serde]

@@ -1,5 +1,5 @@
 use crate::{
-    contract::{instantiate, reply, CREATE_DENOM_REPLY_ID},
+    contract::instantiate,
     msg::{InstantiateMsg, OracleQueryMsg},
 };
 use cosmwasm_std::{
@@ -8,11 +8,9 @@ use cosmwasm_std::{
         mock_dependencies, mock_dependencies_with_balances, mock_env, mock_info, MockApi,
         MockQuerier, MockStorage,
     },
-    to_json_binary, Coin, ContractResult, Decimal, Empty, OwnedDeps, QuerierResult, Reply,
-    SubMsgResponse, SubMsgResult, SystemError, SystemResult, WasmQuery,
+    to_json_binary, Coin, ContractResult, Decimal, Empty, OwnedDeps, QuerierResult, SystemError,
+    SystemResult, WasmQuery,
 };
-use prost::Message;
-use quasar_std::quasarlabs::quasarnode::tokenfactory::v1beta1::MsgCreateDenomResponse;
 
 pub const OWNER: &str = "owner";
 pub const USER: &str = "user";
@@ -41,24 +39,6 @@ fn basic_setup(
     )
     .is_ok());
 
-    assert!(reply(
-        deps.as_mut(),
-        env,
-        Reply {
-            id: CREATE_DENOM_REPLY_ID,
-            result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![],
-                data: Some(
-                    MsgCreateDenomResponse {
-                        new_token_denom: VAULT_DENOM.to_string(),
-                    }
-                    .encode_to_vec()
-                    .into()
-                ),
-            })
-        }
-    )
-    .is_ok());
     deps
 }
 

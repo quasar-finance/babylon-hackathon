@@ -10,6 +10,8 @@ cosmwasm-schema = "1.5.4"
 cw-storage-plus = "1.2.0"
 cw2 = "1.1.2"
 thiserror = { version = "1.0.56" }
+cw20-base = "1.1.2"
+cw20 = "1.1.2"
 
 # protobuf code generation
 prost = {version = "0.12.3", default-features = false, features = ["std"]}
