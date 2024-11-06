@@ -4,8 +4,8 @@ use crate::state::{LSTS, ORACLE, OWNER, VAULT_DENOM};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_json_binary, Addr, BankMsg, BankQuery, Binary, Coin, CustomQuery, Decimal, Deps,
-    DepsMut, Env, MessageInfo, Order, QueryRequest, Reply, Response, StdResult, Storage, SubMsg,
+    to_json_binary, Addr, BankMsg, BankQuery, Binary, Coin, CustomQuery, Decimal, Deps, DepsMut,
+    Env, MessageInfo, Order, QueryRequest, Reply, Response, StdResult, Storage, SubMsg,
     SupplyResponse, Uint128,
 };
 use cw2::set_contract_version;
@@ -246,53 +246,4 @@ fn query_value(deps: Deps, env: Env) -> VaultResult<Uint128> {
     let prices = get_prices(&deps, &lst_denoms)?;
     let balances = get_balances(&deps, env.contract.address.to_string(), &lst_denoms)?;
     vault_value(&balances, &prices)
-}
-
-#[derive(PartialEq, Debug)]
-pub struct Changes {
-    pub add: Vec<Coin>,
-    pub remove: Vec<Coin>,
-}
-
-impl Changes {
-    pub fn new(add: Vec<Coin>, remove: Vec<Coin>) -> Self {
-        Self { add, remove }
-    }
-}
-
-impl Default for Changes {
-    fn default() -> Self {
-        Self::new(vec![], vec![])
-    }
-}
-
-pub fn compute_changes(current: &[Coin], desired: &[Coin]) -> Changes {
-    let add = desired
-        .iter()
-        .map(|d| {
-            let current_allocations: Vec<&Coin> =
-                current.iter().filter(|c| c.denom == d.denom).collect();
-            let mut result = coin(d.amount.into(), d.denom.clone());
-            if !current_allocations.is_empty() {
-                result.amount -= std::cmp::min(current_allocations[0].amount, result.amount);
-            }
-            result
-        })
-        .filter(|x| !x.amount.is_zero())
-        .collect();
-    let remove = current
-        .iter()
-        .map(|c| {
-            let desired_allocations: Vec<&Coin> =
-                desired.iter().filter(|d| d.denom == c.denom).collect();
-            let mut result = coin(c.amount.into(), c.denom.clone());
-            if !desired_allocations.is_empty() {
-                result.amount -= std::cmp::min(desired_allocations[0].amount, result.amount);
-            }
-            result
-        })
-        .filter(|x| !x.amount.is_zero())
-        .collect();
-
-    Changes::new(add, remove)
 }
