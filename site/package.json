@@ -34,6 +34,11 @@
 	"dependencies": {
 		"@cosmjs/stargate": "^0.32.4",
 		"@keplr-wallet/types": "^0.12.150",
+		"@visx/shape": "^3.5.0",
+		"@visx/tooltip": "^3.3.0",
+		"@visx/visx": "^3.11.0",
+		"d3-scale-chromatic": "^3.1.0",
+		"d3-shape": "^3.2.0",
 		"neverthrow": "^8.1.1"
 	}
 }

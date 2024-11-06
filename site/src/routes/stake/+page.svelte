@@ -1,7 +1,7 @@
 <script lang="ts">
-	import ToggleButton from '$lib/components/ToggleButton.svelte';
-	import StakeView from '$lib/components/StakeView.svelte';
-	import UnstakeView from '$lib/components/UnstakeView.svelte';
+	import ToggleButton from '$lib/components/staking/ToggleButton.svelte';
+	import StakeView from '$lib/components/staking/StakeView.svelte';
+	import UnstakeView from '$lib/components/staking/UnstakeView.svelte';
 </script>
 
 <main class="staking-page">

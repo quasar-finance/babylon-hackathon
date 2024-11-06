@@ -17,8 +17,8 @@
 	<div class="navbar-logo">Quasar</div>
 	<div class="navbar-links">
 		<a href="/stake" sveltekit:prefetch>Stake</a>
-		<a href="#">Claim</a>
-		<a href="#">Vote</a>
+		<a href="/claim">Claim</a>
+		<a href="/vote">Vote</a>
 		<a href="#">DeFi</a>
 	</div>
 	<div class="navbar-wallet">
