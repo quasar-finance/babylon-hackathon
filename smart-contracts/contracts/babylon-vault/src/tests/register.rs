@@ -1,12 +1,13 @@
 use cosmwasm_std::{
     from_json,
     testing::{mock_env, mock_info},
+    StdError,
 };
 use mars_owner::OwnerError;
 
 use crate::{
     contract::{execute, query},
-    msg::{ExecuteMsg, LstInfo, QueryMsg},
+    msg::{ExecuteMsg, QueryMsg},
     tests::setup::{setup, OWNER, USER},
     VaultError,
 };
@@ -18,8 +19,7 @@ fn register_lst_fails_for_non_owner() {
     let info = mock_info(USER, &[]);
 
     let denom = "lst".to_string();
-    let interface = "interface".to_string();
-    let msg = ExecuteMsg::RegisterLst { denom, interface };
+    let msg = ExecuteMsg::RegisterLst { denom };
     let result = execute(deps.as_mut(), env, info, msg);
     assert!(result.is_err());
 
@@ -53,27 +53,19 @@ fn register_and_unregister_lst() {
     let info = mock_info(OWNER, &[]);
 
     let denom = "lst".to_string();
-    let interface = "interface".to_string();
     let msg = ExecuteMsg::RegisterLst {
         denom: denom.clone(),
-        interface: interface.clone(),
     };
     assert!(execute(deps.as_mut(), env.clone(), info.clone(), msg).is_ok());
 
-    let lsts: Vec<LstInfo> =
+    let lsts: Vec<String> =
         from_json(query(deps.as_ref(), env.clone(), QueryMsg::Lsts {}).unwrap()).unwrap();
     assert_eq!(lsts.len(), 1);
-    assert_eq!(
-        lsts[0],
-        LstInfo {
-            denom: denom.clone(),
-            interface
-        }
-    );
+    assert_eq!(lsts[0], denom);
 
     let msg = ExecuteMsg::UnregisterLst { denom };
     assert!(execute(deps.as_mut(), env.clone(), info.clone(), msg).is_ok());
-    let lsts: Vec<LstInfo> =
+    let lsts: Vec<String> =
         from_json(query(deps.as_ref(), env.clone(), QueryMsg::Lsts {}).unwrap()).unwrap();
     assert_eq!(lsts.len(), 0);
 }
@@ -85,17 +77,15 @@ fn unregister_fails_if_denom_is_not_registered() {
     let info = mock_info(OWNER, &[]);
 
     let denom = "lst".to_string();
-    let interface = "interface".to_string();
     let msg = ExecuteMsg::RegisterLst {
         denom: denom.clone(),
-        interface: interface.clone(),
     };
     assert!(execute(deps.as_mut(), env.clone(), info.clone(), msg).is_ok());
 
-    let lsts: Vec<LstInfo> =
+    let lsts: Vec<String> =
         from_json(query(deps.as_ref(), env.clone(), QueryMsg::Lsts {}).unwrap()).unwrap();
     assert_eq!(lsts.len(), 1);
-    assert_eq!(lsts[0], LstInfo { denom, interface });
+    assert_eq!(lsts[0], denom);
 
     let other_denom = "other_lst".to_string();
     let msg = ExecuteMsg::UnregisterLst {
@@ -106,6 +96,8 @@ fn unregister_fails_if_denom_is_not_registered() {
 
     assert_eq!(
         result.unwrap_err(),
-        VaultError::DenomNotFound { denom: other_denom }
+        VaultError::Std(StdError::GenericErr {
+            msg: "Denom not found".to_string()
+        })
     );
 }
