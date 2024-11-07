@@ -358,7 +358,8 @@ fn rebalance(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
     let desired_absolute_allocations =
         get_absolute_allocations(&deps.as_ref(), env.contract.address, &prices, &lst_denoms)?;
 
-    let mut response = Response::default();
+    let mut withdraw_msgs: Vec<CosmosMsg> = vec![];
+    let mut deposit_msgs: Vec<CosmosMsg> = vec![];
     for Allocation {
         destination,
         amount,
@@ -378,14 +379,16 @@ fn rebalance(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
         let desired = desired?;
         let changes = compute_changes(&current, &desired);
         if !changes.add.is_empty() {
-            response = response.add_messages(get_deposit_msg(adaptor.clone(), changes.add));
+            deposit_msgs.push(get_deposit_msg(adaptor.clone(), changes.add)?);
         }
         if !changes.remove.is_empty() {
-            response = response.add_messages(get_withdraw_msg(adaptor, changes.remove));
+            withdraw_msgs.push(get_withdraw_msg(adaptor, changes.remove)?);
         }
     }
 
-    Ok(response)
+    Ok(Response::default()
+        .add_messages(withdraw_msgs)
+        .add_messages(deposit_msgs))
 }
 
 fn get_destinations(storage: &dyn Storage) -> VaultResult<Vec<DestinationInfo>> {
