@@ -19,7 +19,7 @@
 		<a href="/stake" sveltekit:prefetch>Stake</a>
 		<a href="/claim">Claim</a>
 		<a href="/vote">Vote</a>
-		<a href="#">DeFi</a>
+		<a href="/defi">DeFi</a>
 	</div>
 	<div class="navbar-wallet">
 		{#if walletAddress}

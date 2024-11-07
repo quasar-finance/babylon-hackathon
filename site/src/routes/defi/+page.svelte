@@ -7,18 +7,19 @@
 	import EpochTimer from '$lib/components/voting/EpochTimer.svelte';
 	import VoteActions from '$lib/components/voting/VoteActions.svelte';
 	import contractAddresses from '$lib/config/contract_addresses.json';
+	import type { Coin } from '@cosmjs/stargate';
 
 	let totalDistribution = "$37.91M";
 	let activeTab = "Vault allocation";
 
-	const VAULT_CONTRACT_ADDRESS = contractAddresses.mock_gauge;
+	const VAULT_CONTRACT_ADDRESS = contractAddresses.babylon_vault;
 	
 	interface DestinationInfo {
 		destination: string;
 		adaptor: string;
 	}
 
-	let pieData: { label: string; value: number }[] = [{"label": "hardcoded-id1", "value": 0.43}, {"label": "hardcoded-id2", "value": 0.57}];
+	let pieData: { label: string; value: number }[] = [{"label": "hardcoded-id1", "value": 0.55500}, {"label": "hardcoded-id2", "value": 0.33}];
 	let isLoading = true;
 
 	function calculatePercentages(data: { label: string; value: number }[]): { label: string; value: number }[] {
@@ -38,18 +39,31 @@
 			}
 
 			const client = await CosmWasmClient.connect(rpcEndpoint);
-			const response: { destinations: DestinationInfo[] } = await client.queryContractSmart(VAULT_CONTRACT_ADDRESS, {
+			const response: DestinationInfo[] = await client.queryContractSmart(VAULT_CONTRACT_ADDRESS, {
 				destinations: {}
 			});
 			
 			console.log('Contract response:', response);
-			
-            
+
+			// Query balance for each destination's adaptor
+			const balancePromises = response.map(async (destination) => {
+                console.log("querying", destination.adaptor);
+				const balanceResponse: { balance: Coin[] } = await client.queryContractSmart(destination.adaptor, {
+					balance_query: {}
+				});
+				return {
+					destination: destination.destination,
+					balance: balanceResponse.balance
+				};
+			});
+
+			const balances = await Promise.all(balancePromises);
+			console.log('Balances:', balances);
 
 			// Transform the response into pie chart data
-			pieData = response.allocations.map((allocation: { destination_id: any; amount: string; }) => ({
-				label: allocation.destination_id,
-				value: parseFloat(allocation.amount)
+			pieData = response.map((destination, index) => ({
+				label: destination.destination,
+				value: parseFloat(balances[index].balance[0]?.amount || '0')
 			}));
 			
 			isLoading = false;
@@ -88,7 +102,7 @@
 		{#if isLoading}
 			<div class="loading">Loading allocations...</div>
 		{:else}
-			<PieChart data={calculatePercentages(pieData)} />
+			<PieChart data={pieData} unit='BBN'/>
 		{/if}
 
 		<div class="info-section">
