@@ -11,6 +11,7 @@
 	]; // Array of objects with `label` and `value` keys
 	export let width = 300;
 	export let height = 300;
+	export let unit = '%';
 
 	const radius = Math.min(width, height) / 2;
 
@@ -63,7 +64,7 @@
 			class="tooltip"
 			style="left: {tooltipX}px; top: {tooltipY}px"
 		>
-			<strong>{tooltipData.label}</strong>: {tooltipData.value}%
+			<strong>{tooltipData.label}</strong>: {tooltipData.value}{unit}
 		</div>
 	{/if}
 </div>
