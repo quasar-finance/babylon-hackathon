@@ -33,7 +33,14 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     for dest in msg.destinations {
-        DESTINATIONS.save(deps.storage, dest, &Empty::default())?;
+        DESTINATIONS.save(deps.storage, dest.clone(), &Empty::default())?;
+        WEIGHTS.add(
+            deps.storage,
+            Weight {
+                destination_id: dest,
+                amount: Uint128::one(),
+            },
+        )?;
     }
 
     Ok(Response::new())
@@ -110,25 +117,29 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> GaugeResult<Binary> {
     }
 }
 
-fn query_allocations(deps: Deps) -> GaugeResult<GetAllocationsResponse> {
+pub fn query_allocations(deps: Deps) -> GaugeResult<GetAllocationsResponse> {
     let allocations: Vec<Allocation> = DESTINATIONS
         .range(deps.storage, None, None, Order::Ascending)
-        .map(|item| {
-            let (destination_id, _) = item?;
+        .filter_map(|item| {
+            let (destination_id, _) = item.ok()?;
 
-            let weight = WEIGHTS.get(deps.storage, destination_id.as_str())?;
-            let total_weight = WEIGHTS.total(deps.storage)?;
-            Ok(Allocation {
+            let weight = WEIGHTS.get(deps.storage, destination_id.as_str()).ok()?;
+            if weight.amount.is_zero() {
+                return None;
+            }
+
+            let total_weight = WEIGHTS.total(deps.storage).ok()?;
+            Some(Ok(Allocation {
                 destination_id,
                 amount: Decimal::from_ratio(weight.amount, total_weight),
-            })
+            }))
         })
         .collect::<StdResult<Vec<_>>>()?;
 
     Ok(GetAllocationsResponse { allocations })
 }
 
-fn query_allocation(deps: Deps, destination_id: String) -> GaugeResult<GetAllocationResponse> {
+pub fn query_allocation(deps: Deps, destination_id: String) -> GaugeResult<GetAllocationResponse> {
     let weight = WEIGHTS.get(deps.storage, destination_id.as_str())?;
     let total_weight = WEIGHTS.total(deps.storage)?;
 
