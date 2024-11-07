@@ -11,7 +11,7 @@
 	let inputValue = '1';
 	let inputDenom = 'ubbn'
 	$: outputValue = inputValue;
-	$: outputUSD = `$${(parseFloat(inputValue) * 100000).toLocaleString()}`;
+	$: outputUSD = `$${(parseFloat(inputValue) * 9.34).toLocaleString()}`;
 	
 	const VAULT_CONTRACT_ADDRESS = contractAddresses.babylon_vault;
 
@@ -84,7 +84,7 @@
 	<p>You will get</p>
 	<div>
 		<span>{outputValue}</span>
-		<span>{outputUSD}</span>
+		<span class="text-sm text-gray-600">{outputUSD}</span>
 	</div>
 </div>
 
