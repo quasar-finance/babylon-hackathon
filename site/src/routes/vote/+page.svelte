@@ -6,14 +6,23 @@
 	import VotingIncentives from '$lib/components/voting/VotingIncentives.svelte';
 	import EpochTimer from '$lib/components/voting/EpochTimer.svelte';
 	import VoteActions from '$lib/components/voting/VoteActions.svelte';
+	import contractAddresses from '$lib/config/contract_addresses.json';
 
 	let totalDistribution = "$37.91M";
 	let activeTab = "Vault allocation";
 
-	const MOCK_GAUGE_CONTRACT = "bbn1hf7swaczhr4892gxq20aadc49cul5angmfuxuuvgk2yjpz4k6npsj70gft";
+	const GAUGE_CONTRACT = contractAddresses.mock_gauge;
 	
-	let pieData: { label: string; value: number }[] = [{"label": "hardcoded-id1", "value": 43}, {"label": "hardcoded-id2", "value": 57}];
+	let pieData: { label: string; value: number }[] = [{"label": "hardcoded-id1", "value": 0.43}, {"label": "hardcoded-id2", "value": 0.57}];
 	let isLoading = true;
+
+	function calculatePercentages(data: { label: string; value: number }[]): { label: string; value: number }[] {
+		const total = data.reduce((sum, item) => sum + item.value, 0);
+		return data.map(item => ({
+			label: item.label,
+			value: (item.value / total) * 100
+		}));
+	}
 
 	async function fetchAllocations() {
 		try {
@@ -24,7 +33,7 @@
 			}
 
 			const client = await CosmWasmClient.connect(rpcEndpoint);
-			const response = await client.queryContractSmart(MOCK_GAUGE_CONTRACT, {
+			const response = await client.queryContractSmart(GAUGE_CONTRACT, {
 				get_allocations: {}
 			});
 			
@@ -72,7 +81,7 @@
 		{#if isLoading}
 			<div class="loading">Loading allocations...</div>
 		{:else}
-			<PieChart data={pieData} />
+			<PieChart data={calculatePercentages(pieData)} />
 		{/if}
 
 		<div class="info-section">

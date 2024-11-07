@@ -35,7 +35,7 @@ sleep 45
 babylond tx wasm execute $MOCK_GAUGE_ADDRESS '{
     "custom": {
         "upsert_allocation": {
-            "destination_id": "FAKE-ID1",
+            "destination_id": "FAKE-ID2",
             "amount": "40"
         }
     }
