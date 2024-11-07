@@ -1,3 +1,6 @@
 {
-  "mock_gauge": "bbn15az6elygde95w38yqwkg0g98na8x5qgt4agrtmpw5jtcfg246nssnfpn8s"
+  "mock_gauge": "bbn15az6elygde95w38yqwkg0g98na8x5qgt4agrtmpw5jtcfg246nssnfpn8s",
+  "ecosystem_adaptor": "bbn142dkm8xe9f0ytyarp7ww4kvclva65705jphxsk9exn3nqdsm8jkqc0yn25",
+  "dummy_oracle": "bbn17hnyglhmmzaatasaqcunee2uzdxs5294w5x2mglv469nqgj8h2lspdzzap",
+  "babylon_vault": "bbn13eu6ctese2zrvjfjnuqrk2rw654s4n2qee2eqkdtm4j9ycem52vqd4rlrp"
 }
