@@ -8,12 +8,17 @@
 	import contractAddresses from '$lib/config/contract_addresses.json';
 
 
-	let inputValue = '';
-	let inputDenom = 'bbn'
-	let outputValue = '4.2 BLT';
-	let outputUSD = '$294,000';
+	let inputValue = '1';
+	let inputDenom = 'ubbn'
+	$: outputValue = inputValue;
+	$: outputUSD = `$${(parseFloat(inputValue) * 100000).toLocaleString()}`;
 	
 	const VAULT_CONTRACT_ADDRESS = contractAddresses.babylon_vault;
+
+	function convertToMicroUnits(value: string): string {
+		if (!value) return '0';
+		return (parseFloat(value) * 1_000_000).toString();
+	}
 
 	async function handleDeposit() {
 		try {
@@ -39,7 +44,7 @@
 					msg,
 					'auto',
 					"",
-					[coin(inputValue, inputDenom)]
+					[coin(convertToMicroUnits(inputValue), inputDenom)]
 				);
 
 				console.log('Deposit successful:', response);
@@ -54,6 +59,7 @@
 
 	function handleInput(value) {
 		inputValue = value;
+		outputUSD = `$${(parseFloat(value) * 100000).toLocaleString()}`;
 	}
 
 	function setHalf() {
@@ -66,11 +72,12 @@
 </script>
 
 <CurrencyInput
-	label="Bitcoin"
+	label="BBN"
 	value={inputValue}
 	onInput={handleInput}
 	onHalf={setHalf}
 	onMax={setMax}
+	options={["BBN"]}
 />
 
 <div class="output">
