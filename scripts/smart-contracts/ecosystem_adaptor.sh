@@ -20,6 +20,6 @@ bash $CONTRACT_SCRIPTS/instantiate.sh ecosystem_adaptor '{"babylon_vault": "'$BA
 
 sleep 45
 
-ECOSYSTEM_ADAPTOR_ADDRESS=$(jq -r '.babylon_vault' "${REPO_ROOT}/scripts/smart-contracts/contract_addresses.json")
+ECOSYSTEM_ADAPTOR_ADDRESS=$(jq -r '.ecosystem_adaptor' "${REPO_ROOT}/scripts/smart-contracts/contract_addresses.json")
 
 babylond tx wasm execute $BABYLON_VAULT_ADDRESS '{"register_destination":{"destination":"cosmoshub","adaptor":"'$ECOSYSTEM_ADAPTOR_ADDRESS'"}}' $keyringBackend --from=$userKey --gas=auto --gas-prices 0.01u$feeToken --gas-adjustment=1.3 --chain-id=$chainId -b=sync -y --log_format=json -o "json" --node $nodeUrl
