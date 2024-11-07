@@ -1,7 +1,6 @@
 use crate::contract::{execute_upsert_weight, instantiate};
 use crate::{contract::query_allocations, msg::InstantiateMsg};
 
-use super::*;
 use cosmwasm_std::Uint128;
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
