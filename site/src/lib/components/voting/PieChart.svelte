@@ -1,6 +1,19 @@
 <script lang="ts">
 	import { arc, pie } from 'd3-shape';
-	import { interpolateRainbow } from 'd3-scale-chromatic';
+	import { 
+		schemeCategory10,     // Fixed set of 10 distinct colors
+		// or choose from these alternatives:
+		// schemeAccent,      // 8 colors
+		// schemeDark2,       // 8 colors
+		// schemePaired,      // 12 colors
+		// schemePastel1,     // 9 colors
+		// schemePastel2,     // 8 colors
+		// schemeSet1,        // 9 colors
+		// schemeSet2,        // 8 colors
+		// schemeSet3,        // 12 colors
+		// schemeTableau10    // 10 colors
+	} from 'd3-scale-chromatic';
+	import { scaleOrdinal } from 'd3-scale';
 
 	export let data = [
 		{ label: 'Option A', value: 30 },
@@ -43,6 +56,8 @@
 	function hideTooltip() {
 		tooltipData = null;
 	}
+
+	const colorScale = scaleOrdinal(schemeCategory10);
 </script>
 
 <div class="pie-chart">
@@ -51,7 +66,7 @@
 			{#each arcs as arc, i}
 				<path
 					d={arcGenerator(arc)}
-					fill={interpolateRainbow(i / data.length)}
+					fill={colorScale(i)}
 					on:mouseover={(e) => showTooltip(e, arc)}
 					on:mouseout={hideTooltip}
 				/>
