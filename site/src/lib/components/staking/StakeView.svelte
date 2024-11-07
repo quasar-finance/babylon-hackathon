@@ -66,8 +66,8 @@
 		inputValue = (parseFloat(inputValue) / 2).toString();
 	}
 
-	function setMax() {
-		inputValue = '4.2'; // Example max value, replace as needed
+	async function setMax() {
+		inputValue = "10";
 	}
 </script>
 
