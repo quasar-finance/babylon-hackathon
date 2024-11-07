@@ -9,7 +9,7 @@
 	import contractAddresses from '$lib/config/contract_addresses.json';
 	import type { Coin } from '@cosmjs/stargate';
 
-	let totalDistribution = "$37.91M";
+	export let tvl = "$37.91M";
 	let activeTab = "Vault allocation";
 
 	const VAULT_CONTRACT_ADDRESS = contractAddresses.babylon_vault;
@@ -92,9 +92,9 @@
 
 <main class="voting-page">
 	<VoteHeader
-		{totalDistribution}
+		totalDistribution={tvl}
 		{activeTab}
-		tabs={["Vault allocation", "vePendle Voting"]}
+		tabs={["Vault allocation"]}
 		onTabChange={handleTabChange}
 	/>
 
@@ -106,11 +106,10 @@
 		{/if}
 
 		<div class="info-section">
-			<VotingIncentives />
+			<VotingIncentives title="Active Allocations" text="active allocations of the vault to BSNs and BVSes. These allocations are updates every epoch in rolling updates. Earned yield is compounded into the allocation on the destination. Rewards are paid out seperately"/>
 			<EpochTimer epoch={70} days={0} hours={12} minutes={51} seconds={42} />
 		</div>
 
-		<VoteActions onVote={handleVote} onAddIncentives={handleAddIncentives} />
 	</div>
 </main>
 
