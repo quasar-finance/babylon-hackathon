@@ -3,8 +3,6 @@ use cw_storage_plus::{Item, Map};
 use mars_owner::Owner;
 use std::collections::HashSet;
 
-pub use cw20_base::state::{ALLOWANCES, BALANCES, TOKEN_INFO};
-
 pub const OWNER: Owner = Owner::new("owner");
 pub const GAUGE: Item<Addr> = Item::new("gauge");
 pub const LSTS: Item<HashSet<String>> = Item::new("lsts");
