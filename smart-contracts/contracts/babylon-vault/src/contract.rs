@@ -12,8 +12,7 @@ use cw2::set_contract_version;
 use cw20_base::contract::{execute_burn, execute_mint, query_balance, query_token_info};
 use cw20_base::enumerable::query_all_accounts;
 use cw20_base::state::{MinterData, TokenInfo, TOKEN_INFO};
-use ecosystem_adaptor::msg as EcosystemAdaptorMsg;
-use interfaces::gauge::{GetAllocationsResponse, QueryMsg as GaugeQueryMsg};
+use interfaces::{GetAllocationsResponse, QueryMsg as GaugeQueryMsg};
 use quasar::allocations::compute_changes;
 use std::collections::{HashMap, HashSet};
 
@@ -21,6 +20,7 @@ const CONTRACT_NAME: &str = "quasar:babylon-vault";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub type VaultResult<T = Response> = Result<T, VaultError>;
+use ecosystem_adaptor::msg as EcosystemAdaptorMsg;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

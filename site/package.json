@@ -32,6 +32,7 @@
 		"vite": "^5.0.3"
 	},
 	"dependencies": {
+		"@cosmjs/cosmwasm-stargate": "^0.32.4",
 		"@cosmjs/stargate": "^0.32.4",
 		"@keplr-wallet/types": "^0.12.150",
 		"@visx/shape": "^3.5.0",
