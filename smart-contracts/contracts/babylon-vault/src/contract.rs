@@ -260,6 +260,8 @@ fn deposit(deps: DepsMut, env: Env, info: MessageInfo) -> VaultResult {
         .add_attribute("amount", new_shares))
 }
 
+// Doesn't work need to withdrawn from adaptors. As the proper solution likely requires to register claims
+// that unlock later, this is kept out of the scope of this hackathon.
 fn withdraw(deps: DepsMut, env: Env, info: MessageInfo, amount: Uint128) -> VaultResult {
     assert_withdraw_funds(deps.storage, &info.funds)?;
 
