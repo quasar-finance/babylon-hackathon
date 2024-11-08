@@ -30,6 +30,3 @@ cw-storage-plus = { workspace = true }
 thiserror = { workspace = true }
 cw2 = { workspace = true }
 mars-owner = { workspace = true }
-
-[dev-dependencies]
-prost = { workspace = true }
