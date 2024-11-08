@@ -22,7 +22,7 @@ CONTRACT_SCRIPTS=${REPO_ROOT}/scripts/smart-contracts
 
 source ${REPO_ROOT}/scripts/smart-contracts/env_euphrates.sh
 
-bash $CONTRACT_SCRIPTS/store.sh ecosystem_adaptor.wasm
+# bash $CONTRACT_SCRIPTS/store.sh ecosystem_adaptor.wasm
 
 BABYLON_VAULT_ADDRESS=$(jq -r '.babylon_vault' "${REPO_ROOT}/scripts/smart-contracts/contract_addresses.json")
 bash $CONTRACT_SCRIPTS/instantiate.sh ecosystem_adaptor '{"babylon_vault": "'$BABYLON_VAULT_ADDRESS'","ecosystem_info": {"connection": "connection-0","deposit_denoms": ["ubbn"],"deposit_ecosystem": "'$DESTINATION_NAME'","destination_chain_denom": "ibc/denom","return_source_channel": "channel-0","transfer_channel": "channel-0"}, "polytone_info": {"polyton_note_contract": "'$BABYLON_VAULT_ADDRESS'"}}'
