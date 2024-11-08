@@ -10,7 +10,7 @@
 </script>
 
 <div class="vote-header">
-	<div class="total-incentive">Total distribution: {totalDistribution}</div>
+	<div class="total-incentive">TVL: {totalDistribution}</div>
 	<div class="tabs">
 		{#each tabs as tab}
 			<button

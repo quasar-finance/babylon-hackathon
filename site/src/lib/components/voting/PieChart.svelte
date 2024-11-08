@@ -60,31 +60,52 @@
 	const colorScale = scaleOrdinal(schemeCategory10);
 </script>
 
-<div class="pie-chart">
-	<svg {width} {height}>
-		<g transform={`translate(${width / 2}, ${height / 2})`}>
-			{#each arcs as arc, i}
-				<path
-					d={arcGenerator(arc)}
-					fill={colorScale(i)}
-					on:mouseover={(e) => showTooltip(e, arc)}
-					on:mouseout={hideTooltip}
-				/>
-			{/each}
-		</g>
-	</svg>
+<div class="chart-container">
+	<div class="pie-chart">
+		<svg {width} {height}>
+			<g transform={`translate(${width / 2}, ${height / 2})`}>
+				{#each arcs as arc, i}
+					<path
+						d={arcGenerator(arc)}
+						fill={colorScale(i)}
+						on:mouseover={(e) => showTooltip(e, arc)}
+						on:mouseout={hideTooltip}
+					/>
+				{/each}
+			</g>
+		</svg>
 
-	{#if tooltipData}
-		<div 
-			class="tooltip"
-			style="left: {tooltipX}px; top: {tooltipY}px"
-		>
-			<strong>{tooltipData.label}</strong>: {tooltipData.value}{unit}
-		</div>
-	{/if}
+		{#if tooltipData}
+			<div 
+				class="tooltip"
+				style="left: {tooltipX}px; top: {tooltipY}px"
+			>
+				<strong>{tooltipData.label}</strong>: {tooltipData.value}{unit}
+			</div>
+		{/if}
+	</div>
+
+	<div class="legend">
+		{#each data as item, i}
+			<div class="legend-item">
+				<svg width="20" height="20">
+					<rect width="20" height="20" fill={colorScale(i)} />
+				</svg>
+				<span>{item.label}: {item.value}{unit}</span>
+			</div>
+		{/each}
+	</div>
 </div>
 
 <style>
+	.chart-container {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 2rem;
+		width: 100%;
+	}
+
 	.pie-chart {
 		position: relative;
 		display: flex;
@@ -101,5 +122,19 @@
 		pointer-events: none;
 		transform: translate(-50%, -100%);
 		margin-top: -8px;
+	}
+
+	.legend {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		transform: scale(0.8);
+		transform-origin: left center;
+	}
+
+	.legend-item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 </style>

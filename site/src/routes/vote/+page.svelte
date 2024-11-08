@@ -73,7 +73,7 @@
 	<VoteHeader
 		{totalDistribution}
 		{activeTab}
-		tabs={["Vault allocation", "vePendle Voting"]}
+		tabs={["Vault allocation", "Voting pools"]}
 		onTabChange={handleTabChange}
 	/>
 
