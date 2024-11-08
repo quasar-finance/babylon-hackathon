@@ -1,9 +1,6 @@
 <script lang="ts">
-	export let text = `
-		Voting Incentives can be added from any chain for any market. Voters get all voting rewards from different chains for the pools they vote.
-		Only vlPNP in lock state can vote. Penpie casts votes every Wednesday around 2:00 p.m UTC to Pendle finance.
-	`;
-	export let title = `Voting Incentives and Votes`;
+	export let text = `Every epoch the rebalance from all the new purchases will kick in from the overall pool based on the shares purchsed by the protocols.`;
+	export let title = `Shared security rebalance`;
 </script>
 
 <div class="voting-incentives">

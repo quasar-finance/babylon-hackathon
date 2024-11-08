@@ -73,7 +73,7 @@
 	<VoteHeader
 		{totalDistribution}
 		{activeTab}
-		tabs={["Vault allocation", "vePendle Voting"]}
+		tabs={["Vault allocation"]}
 		onTabChange={handleTabChange}
 	/>
 
@@ -89,7 +89,7 @@
 			<EpochTimer epoch={70} days={0} hours={12} minutes={51} seconds={42} />
 		</div>
 
-		<VoteActions onVote={handleVote} onAddIncentives={handleAddIncentives} />
+		<!-- <VoteActions onVote={handleVote} onAddIncentives={handleAddIncentives} /> -->
 	</div>
 </main>
 
