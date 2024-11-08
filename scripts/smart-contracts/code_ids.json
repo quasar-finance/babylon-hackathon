@@ -1,6 +1,6 @@
 {
-  "mock_gauge": "78",
-  "dummy_oracle": "79",
-  "babylon_vault": "80",
-  "ecosystem_adaptor": "81"
+    "mock_gauge": "83",
+    "dummy_oracle": "84",
+    "babylon_vault": "85",
+    "ecosystem_adaptor": "86"
 }
