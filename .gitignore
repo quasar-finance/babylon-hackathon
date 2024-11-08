@@ -21,7 +21,6 @@ vue/
 local_testnet_run-*nodes/
 *.out
 coverage.txt
-**/Cargo.lock
 
 containers_homes/
 
